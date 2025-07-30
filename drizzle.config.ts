@@ -1,5 +1,7 @@
 import { defineConfig } from "drizzle-kit";
 
+require("@dotenvx/dotenvx").config();
+
 if (!process.env.POSTGRESQL_CONNECTION_STRING) {
 	throw new Error("POSTGRESQL_CONNECTION_STRING is not set");
 }

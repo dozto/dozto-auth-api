@@ -1,8 +1,8 @@
 // biome-ignore assist/source/organizeImports: <Keep DotEnv Load First>
 import { serve } from "bun";
 
-import * as authSchema from "@/domains/auth/auth.entity";
-import * as userSchema from "@/domains/user/user.entity";
+import * as authSchema from "@/auth/auth.entity";
+import * as userSchema from "@/user/user.entity";
 import app from "@/http";
 import logger from "@/utils/logger";
 import { PostgreSQLFactory } from "@/infras/postgres/postgres.manager";

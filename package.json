@@ -3,15 +3,23 @@
 	"private": true,
 	"scripts": {
 		"dev": "NODE_ENV=development dotenvx run -- bun run --hot src/boot.ts",
-		"staging": "NODE_ENV=staging bun run --hot src/boot.ts",
-		"production": "NODE_ENV=production bun run --hot src/boot.ts",
+		"stag": "NODE_ENV=staging dotenvx run -f .env.staging -- bun run --hot src/boot.ts",
+		"prod": "NODE_ENV=production dotenvx run -f .env.production -- bun run --hot src/boot.ts",
 		"lint": "biome check .",
-		"lint:fix": "biome check . --write"
+		"lint:fix": "biome check . --write",
+		"test:intg": "NODE_ENV=test dotenvx run -f .env.test -- bun test src/tests/integration/**/*.ts --coverage",
+		"db:generate": "bunx drizzle-kit generate",
+		"db:migrate": "bunx drizzle-kit migrate",
+		"db:studio": "bunx drizzle-kit studio",
+		"db:drop": "bunx drizzle-kit drop",
+		"db:introspect": "bunx drizzle-kit introspect"
 	},
 	"dependencies": {
+		"@faker-js/faker": "^9.9.0",
 		"@hono/zod-validator": "^0.7.0",
 		"argon2": "^0.43.0",
 		"drizzle-orm": "^0.44.2",
+		"drizzle-zod": "^0.8.2",
 		"hono": "^4.8.2",
 		"jsonwebtoken": "^9.0.2",
 		"pg": "^8.16.2",

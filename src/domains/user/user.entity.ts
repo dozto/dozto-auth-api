@@ -1,6 +1,4 @@
 import {
-	boolean,
-	integer,
 	jsonb,
 	pgEnum,
 	pgTable,
@@ -28,46 +26,32 @@ export const userRoleEnum = pgEnum(
 	Object.values(UserRole) as [UserRoleType],
 );
 
-// User Table
+// 用户信息表
 export const users = pgTable("users", {
-	// Primary Key
+	// 主键
 	id: uuid("id").primaryKey().defaultRandom(),
 
-	// Basic Info
+	// 基本信息
 	username: varchar("username", { length: 50 }).unique().notNull(),
-	email: varchar("email", { length: 255 }),
-	phoneCountryCode: varchar("phone_country_code", { length: 5 }),
-	phone: varchar("phone", { length: 20 }),
-	name: varchar("name", { length: 100 }),
+	firstName: varchar("first_name", { length: 50 }),
+	lastName: varchar("last_name", { length: 50 }),
 	avatar: text("avatar"),
 
-	// Verification Info
-	isEmailVerified: boolean("is_email_verified").default(false),
-	isPhoneVerified: boolean("is_phone_verified").default(false),
+	// 联系方式
+	email: varchar("email", { length: 255 }),
+	phone: varchar("phone", { length: 20 }),
 
-	// Password
-	hashedPassword: varchar("hashed_password", { length: 255 }),
-
-	// Status and Role
+	// 状态和角色
 	status: userStatusEnum("status").default(UserStatus.ACTIVE),
 	role: userRoleEnum("role").default(UserRole.USER),
 
-	// Login Info
-	loginCount: integer("login_count").default(0),
-	failedLoginAttempts: integer("failed_login_attempts").default(0),
-	lockedUntil: timestamp("locked_until"),
-
-	// OAuth
-	wechatOpenId: varchar("wechat_open_id", { length: 255 }),
-	wechatUnionId: varchar("wechat_union_id", { length: 255 }),
-
-	// Preferences
+	// 用户偏好
 	preferences: jsonb("preferences").$type<UserPreferences>(),
 
-	// Metadata
+	// 元数据
 	metadata: jsonb("metadata").$type<Record<string, unknown>>(),
 
-	// Timestamps
+	// 时间戳
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 	updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

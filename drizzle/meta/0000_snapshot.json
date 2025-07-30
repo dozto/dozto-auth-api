@@ -1,9 +1,250 @@
 {
-	"id": "7c1c4d39-2dad-4c13-803f-752db3f5edc0",
+	"id": "d647662a-c399-43d0-8996-22ed20feff89",
 	"prevId": "00000000-0000-0000-0000-000000000000",
 	"version": "7",
 	"dialect": "postgresql",
 	"tables": {
+		"public.auth_history": {
+			"name": "auth_history",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"auth_id": {
+					"name": "auth_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"method": {
+					"name": "method",
+					"type": "auth_method",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"identifier": {
+					"name": "identifier",
+					"type": "varchar(255)",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"success": {
+					"name": "success",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"failure_reason": {
+					"name": "failure_reason",
+					"type": "varchar(255)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"user_agent": {
+					"name": "user_agent",
+					"type": "varchar(500)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"ip_address": {
+					"name": "ip_address",
+					"type": "varchar(45)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"device_id": {
+					"name": "device_id",
+					"type": "varchar(255)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"location": {
+					"name": "location",
+					"type": "jsonb",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"auth_history_user_id_users_id_fk": {
+					"name": "auth_history_user_id_users_id_fk",
+					"tableFrom": "auth_history",
+					"tableTo": "users",
+					"columnsFrom": ["user_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				},
+				"auth_history_auth_id_authentications_id_fk": {
+					"name": "auth_history_auth_id_authentications_id_fk",
+					"tableFrom": "auth_history",
+					"tableTo": "authentications",
+					"columnsFrom": ["auth_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.authentications": {
+			"name": "authentications",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"method": {
+					"name": "method",
+					"type": "auth_method",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"identifier": {
+					"name": "identifier",
+					"type": "varchar(255)",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"credential": {
+					"name": "credential",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"is_enabled": {
+					"name": "is_enabled",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": false,
+					"default": true
+				},
+				"expires_at": {
+					"name": "expires_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"attempts": {
+					"name": "attempts",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"default": 0
+				},
+				"max_attempts": {
+					"name": "max_attempts",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"default": 5
+				},
+				"locked_until": {
+					"name": "locked_until",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"metadata": {
+					"name": "metadata",
+					"type": "jsonb",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"last_used_at": {
+					"name": "last_used_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {
+				"auth_method_identifier_unique": {
+					"name": "auth_method_identifier_unique",
+					"columns": [
+						{
+							"expression": "method",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						},
+						{
+							"expression": "identifier",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": true,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"authentications_user_id_users_id_fk": {
+					"name": "authentications_user_id_users_id_fk",
+					"tableFrom": "authentications",
+					"tableTo": "users",
+					"columnsFrom": ["user_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
 		"public.token_records": {
 			"name": "token_records",
 			"schema": "",
@@ -21,17 +262,23 @@
 					"primaryKey": false,
 					"notNull": false
 				},
-				"jti": {
-					"name": "jti",
-					"type": "text",
+				"auth_id": {
+					"name": "auth_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"auth_method": {
+					"name": "auth_method",
+					"type": "auth_method",
 					"primaryKey": false,
 					"notNull": true
 				},
-				"token_type": {
-					"name": "token_type",
-					"type": "varchar(50)",
+				"refresh_token": {
+					"name": "refresh_token",
+					"type": "text",
 					"primaryKey": false,
-					"notNull": true
+					"notNull": false
 				},
 				"is_revoked": {
 					"name": "is_revoked",
@@ -40,14 +287,39 @@
 					"notNull": false,
 					"default": false
 				},
+				"is_expired": {
+					"name": "is_expired",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": false,
+					"default": false
+				},
 				"user_agent": {
 					"name": "user_agent",
-					"type": "varchar(255)",
+					"type": "varchar(500)",
 					"primaryKey": false,
 					"notNull": false
 				},
 				"ip_address": {
 					"name": "ip_address",
+					"type": "varchar(45)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"device_id": {
+					"name": "device_id",
+					"type": "varchar(255)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"device_type": {
+					"name": "device_type",
+					"type": "varchar(50)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"device_name": {
+					"name": "device_name",
 					"type": "varchar(255)",
 					"primaryKey": false,
 					"notNull": false
@@ -58,8 +330,15 @@
 					"primaryKey": false,
 					"notNull": false
 				},
-				"revoked_at": {
-					"name": "revoked_at",
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"last_used_at": {
+					"name": "last_used_at",
 					"type": "timestamp",
 					"primaryKey": false,
 					"notNull": false
@@ -70,15 +349,14 @@
 					"primaryKey": false,
 					"notNull": true
 				},
-				"created_at": {
-					"name": "created_at",
+				"refresh_token_expires_at": {
+					"name": "refresh_token_expires_at",
 					"type": "timestamp",
 					"primaryKey": false,
-					"notNull": true,
-					"default": "now()"
+					"notNull": true
 				},
-				"last_used_at": {
-					"name": "last_used_at",
+				"revoked_at": {
+					"name": "revoked_at",
 					"type": "timestamp",
 					"primaryKey": false,
 					"notNull": false
@@ -94,16 +372,31 @@
 					"columnsTo": ["id"],
 					"onDelete": "cascade",
 					"onUpdate": "no action"
+				},
+				"token_records_auth_id_authentications_id_fk": {
+					"name": "token_records_auth_id_authentications_id_fk",
+					"tableFrom": "token_records",
+					"tableTo": "authentications",
+					"columnsFrom": ["auth_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
-			"uniqueConstraints": {},
+			"uniqueConstraints": {
+				"token_records_refresh_token_unique": {
+					"name": "token_records_refresh_token_unique",
+					"nullsNotDistinct": false,
+					"columns": ["refresh_token"]
+				}
+			},
 			"policies": {},
 			"checkConstraints": {},
 			"isRLSEnabled": false
 		},
-		"public.verification_codes": {
-			"name": "verification_codes",
+		"public.totp_temp_records": {
+			"name": "totp_temp_records",
 			"schema": "",
 			"columns": {
 				"id": {
@@ -113,36 +406,29 @@
 					"notNull": true,
 					"default": "gen_random_uuid()"
 				},
+				"temp_user_id": {
+					"name": "temp_user_id",
+					"type": "varchar(255)",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"method": {
+					"name": "method",
+					"type": "auth_method",
+					"primaryKey": false,
+					"notNull": true
+				},
 				"identifier": {
 					"name": "identifier",
 					"type": "varchar(255)",
 					"primaryKey": false,
 					"notNull": true
 				},
-				"code": {
-					"name": "code",
-					"type": "varchar(10)",
+				"credential": {
+					"name": "credential",
+					"type": "text",
 					"primaryKey": false,
 					"notNull": true
-				},
-				"type": {
-					"name": "type",
-					"type": "varchar(20)",
-					"primaryKey": false,
-					"notNull": true
-				},
-				"purpose": {
-					"name": "purpose",
-					"type": "varchar(50)",
-					"primaryKey": false,
-					"notNull": true
-				},
-				"is_used": {
-					"name": "is_used",
-					"type": "boolean",
-					"primaryKey": false,
-					"notNull": false,
-					"default": false
 				},
 				"attempts": {
 					"name": "attempts",
@@ -151,11 +437,30 @@
 					"notNull": false,
 					"default": 0
 				},
+				"max_attempts": {
+					"name": "max_attempts",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"default": 5
+				},
 				"expires_at": {
 					"name": "expires_at",
 					"type": "timestamp",
 					"primaryKey": false,
 					"notNull": true
+				},
+				"verified_at": {
+					"name": "verified_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"user_info": {
+					"name": "user_info",
+					"type": "jsonb",
+					"primaryKey": false,
+					"notNull": false
 				},
 				"created_at": {
 					"name": "created_at",
@@ -164,17 +469,24 @@
 					"notNull": true,
 					"default": "now()"
 				},
-				"verified_at": {
-					"name": "verified_at",
+				"updated_at": {
+					"name": "updated_at",
 					"type": "timestamp",
 					"primaryKey": false,
-					"notNull": false
+					"notNull": true,
+					"default": "now()"
 				}
 			},
 			"indexes": {},
 			"foreignKeys": {},
 			"compositePrimaryKeys": {},
-			"uniqueConstraints": {},
+			"uniqueConstraints": {
+				"totp_temp_records_temp_user_id_unique": {
+					"name": "totp_temp_records_temp_user_id_unique",
+					"nullsNotDistinct": false,
+					"columns": ["temp_user_id"]
+				}
+			},
 			"policies": {},
 			"checkConstraints": {},
 			"isRLSEnabled": false
@@ -196,27 +508,15 @@
 					"primaryKey": false,
 					"notNull": true
 				},
-				"email": {
-					"name": "email",
-					"type": "varchar(255)",
+				"first_name": {
+					"name": "first_name",
+					"type": "varchar(50)",
 					"primaryKey": false,
 					"notNull": false
 				},
-				"phone_country_code": {
-					"name": "phone_country_code",
-					"type": "varchar(5)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"phone": {
-					"name": "phone",
-					"type": "varchar(20)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"name": {
-					"name": "name",
-					"type": "varchar(100)",
+				"last_name": {
+					"name": "last_name",
+					"type": "varchar(50)",
 					"primaryKey": false,
 					"notNull": false
 				},
@@ -226,23 +526,15 @@
 					"primaryKey": false,
 					"notNull": false
 				},
-				"is_email_verified": {
-					"name": "is_email_verified",
-					"type": "boolean",
-					"primaryKey": false,
-					"notNull": false,
-					"default": false
-				},
-				"is_phone_verified": {
-					"name": "is_phone_verified",
-					"type": "boolean",
-					"primaryKey": false,
-					"notNull": false,
-					"default": false
-				},
-				"hashed_password": {
-					"name": "hashed_password",
+				"email": {
+					"name": "email",
 					"type": "varchar(255)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"phone": {
+					"name": "phone",
+					"type": "varchar(20)",
 					"primaryKey": false,
 					"notNull": false
 				},
@@ -261,38 +553,6 @@
 					"primaryKey": false,
 					"notNull": false,
 					"default": "'user'"
-				},
-				"login_count": {
-					"name": "login_count",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": false,
-					"default": 0
-				},
-				"failed_login_attempts": {
-					"name": "failed_login_attempts",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": false,
-					"default": 0
-				},
-				"locked_until": {
-					"name": "locked_until",
-					"type": "timestamp",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"wechat_open_id": {
-					"name": "wechat_open_id",
-					"type": "varchar(255)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"wechat_union_id": {
-					"name": "wechat_union_id",
-					"type": "varchar(255)",
-					"primaryKey": false,
-					"notNull": false
 				},
 				"preferences": {
 					"name": "preferences",
@@ -337,21 +597,26 @@
 		}
 	},
 	"enums": {
+		"public.auth_method": {
+			"name": "auth_method",
+			"schema": "public",
+			"values": [
+				"username_password",
+				"email_link",
+				"email_totp",
+				"phone_totp",
+				"wechat_oauth"
+			]
+		},
 		"public.user_role": {
 			"name": "user_role",
 			"schema": "public",
-			"values": ["super_admin", "admin", "manager", "user", "guest"]
+			"values": ["super_admin", "admin", "user"]
 		},
 		"public.user_status": {
 			"name": "user_status",
 			"schema": "public",
-			"values": [
-				"pending_confirmation",
-				"active",
-				"inactive",
-				"suspended",
-				"banned"
-			]
+			"values": ["pending", "active", "inactive", "suspended"]
 		}
 	},
 	"schemas": {},

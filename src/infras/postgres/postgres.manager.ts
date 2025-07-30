@@ -1,8 +1,8 @@
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
-import type * as authSchema from "@/domains/auth/auth.entity";
-import type * as userSchema from "@/domains/user/user.entity";
+import * as authSchema from "@/domains/auth/auth.entity";
+import * as userSchema from "@/domains/user/user.entity";
 import logger from "@/utils/logger";
 
 export type DatabaseSchema = typeof userSchema & typeof authSchema;
@@ -11,6 +11,7 @@ export class PostgreSQLFactory {
 	private static instance: PostgreSQLFactory;
 	private static pgClient: NodePgDatabase<DatabaseSchema>;
 	private static pgPool: NodePgDatabase<DatabaseSchema>;
+	private static isInitialized = false;
 
 	public static initialize(
 		connectionString?: string,
@@ -22,15 +23,24 @@ export class PostgreSQLFactory {
 			throw new Error("POSTGRESQL_CONNECTION_STRING is not set");
 		}
 
-		// Use the default schema if none provided
+		// 使用默认 schema 如果没有提供
+		const defaultSchema = {
+			...userSchema,
+			...authSchema,
+		};
+		const finalSchema = schema || defaultSchema;
 
-		PostgreSQLFactory.pgClient = drizzle(pgConnectionString, { schema });
+		PostgreSQLFactory.pgClient = drizzle(pgConnectionString, {
+			schema: finalSchema,
+		});
 		PostgreSQLFactory.pgPool = drizzle(
 			new Pool({
 				connectionString: pgConnectionString,
 			}),
-			{ schema },
+			{ schema: finalSchema },
 		);
+
+		PostgreSQLFactory.isInitialized = true;
 
 		if (!PostgreSQLFactory.instance) {
 			PostgreSQLFactory.instance = new PostgreSQLFactory();
@@ -40,31 +50,17 @@ export class PostgreSQLFactory {
 	}
 
 	public static getClient(): NodePgDatabase<DatabaseSchema> {
-		if (PostgreSQLFactory.pgClient) {
-			return PostgreSQLFactory.pgClient;
-		}
-
-		try {
+		if (!PostgreSQLFactory.isInitialized) {
 			PostgreSQLFactory.initialize();
-			return PostgreSQLFactory.pgClient;
-		} catch (error) {
-			logger.error("Failed to initialize database connection:", error);
-			throw error;
 		}
+		return PostgreSQLFactory.pgClient;
 	}
 
 	public static getPool(): NodePgDatabase<DatabaseSchema> {
-		if (PostgreSQLFactory.pgPool) {
-			return PostgreSQLFactory.pgPool;
-		}
-
-		try {
+		if (!PostgreSQLFactory.isInitialized) {
 			PostgreSQLFactory.initialize();
-			return PostgreSQLFactory.pgPool;
-		} catch (error) {
-			logger.error("Failed to initialize database connection:", error);
-			throw error;
 		}
+		return PostgreSQLFactory.pgPool;
 	}
 
 	public async testConnection(): Promise<void> {
