@@ -1,17 +1,32 @@
 {
-  "name": "dozto-auth-api",
-  "module": "src/index.ts",
-  "type": "module",
-  "private": true,
-  "scripts": {
-    "dev": "bun run src/index.ts",
-    "build": "bun build src/index.ts --outdir dist",
-    "start": "bun run dist/index.js"
-  },
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  }
+	"name": "dozto-auth-api",
+	"module": "src/index.ts",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"dev": "bun run src/index.ts",
+		"build": "bun build src/index.ts --outdir dist",
+		"start": "bun run dist/index.js",
+		"lint": "biome check .",
+		"format": "biome check --write .",
+		"test:unit": "bun test ./src/test/unit/**/*.spec.ts",
+		"test:intg": "bun test ./src/test/intg/**/*.intg.ts",
+		"test": "bun run test:unit && bun run test:intg"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.9",
+		"@types/bun": "latest",
+		"drizzle-kit": "^0.31.10"
+	},
+	"peerDependencies": {
+		"typescript": "^6.0.2"
+	},
+	"dependencies": {
+		"@hono/zod-validator": "^0.7.6",
+		"better-auth": "^1.5.6",
+		"drizzle-orm": "^0.45.2",
+		"hono": "^4.12.9",
+		"postgres": "^3.4.8",
+		"zod": "^4.3.6"
+	}
 }
