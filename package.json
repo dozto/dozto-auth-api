@@ -1,8 +1,13 @@
 {
   "name": "dozto-auth-api",
-  "module": "index.ts",
+  "module": "src/index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist",
+    "start": "bun run dist/index.js"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
