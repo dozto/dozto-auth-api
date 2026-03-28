@@ -1,1 +1,5 @@
-console.log("Hello via Bun!");
+import { createApp } from "./boot";
+
+const app = createApp();
+
+export default app;

@@ -6,6 +6,17 @@ alwaysApply: false
 
 Default to using Bun instead of Node.js.
 
+## Project source of truth
+
+Project-specific requirements, architecture, roadmap, and agent workflow
+definitions live under `agents/`.
+
+- Use `agents/AGENTS.md` as the entry point for project agent guidance.
+- Use `agents/REQUIREMENTS.md`, `agents/ARCHITECTURE.md`, and `agents/ROADMAP.md`
+  as the source of truth for project definition.
+- Do not redefine project scope or planning state in this file when the same
+  information already exists in `agents/`.
+
 - Use `bun <file>` instead of `node <file>` or `ts-node <file>`
 - Use `bun test` instead of `jest` or `vitest`
 - Use `bun build <file.html|file.ts|file.css>` instead of `webpack` or `esbuild`
