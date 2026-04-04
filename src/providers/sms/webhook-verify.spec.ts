@@ -1,60 +1,87 @@
 import "../../../test/test-env.ts";
 import { describe, expect, test } from "bun:test";
+import { Webhook } from "standardwebhooks";
 
+import { loadEnv } from "../../lib/env/index.ts";
 import {
 	calculateHmacSha256,
+	normalizeWebhookSecret,
 	timingSafeEqual,
-	verifyWebhookSignature,
+	verifyStandardWebhookPayload,
 } from "./webhook-verify.ts";
 
 describe("sms provider - webhook verification", () => {
-	test("timingSafeEqual returns true for identical strings", () => {
-		// Use the internal function through module re-export or test directly
-		const result = timingSafeEqual("abc123", "abc123");
-		expect(result).toBe(true);
+	test("normalizeWebhookSecret strips v1, prefix", () => {
+		expect(normalizeWebhookSecret("v1,whsec_abc")).toBe("whsec_abc");
+		expect(normalizeWebhookSecret("whsec_xyz")).toBe("whsec_xyz");
 	});
 
-	test("timingSafeEqual returns false for different strings", () => {
-		const result = timingSafeEqual("abc123", "xyz789");
-		expect(result).toBe(false);
+	test("verifyStandardWebhookPayload accepts valid Standard Webhooks request", () => {
+		const keyBytes = new Uint8Array(32);
+		crypto.getRandomValues(keyBytes);
+		const whsec = `whsec_${Buffer.from(keyBytes).toString("base64")}`;
+		process.env.SUPABASE_WEBHOOK_SECRET = `v1,${whsec}`;
+		loadEnv();
+
+		const payload = JSON.stringify({
+			user: { phone: "+8613800138000" },
+			sms: { otp: "123456" },
+		});
+		const msgId = "msg_verify_test";
+		const now = new Date();
+		const wh = new Webhook(whsec);
+		const signature = wh.sign(msgId, now, payload);
+
+		const headers = new Headers({
+			"webhook-id": msgId,
+			"webhook-timestamp": String(Math.floor(now.getTime() / 1000)),
+			"webhook-signature": signature,
+		});
+
+		const parsed = verifyStandardWebhookPayload(payload, headers);
+		expect(parsed).toEqual(JSON.parse(payload));
 	});
 
-	test("timingSafeEqual returns false for different length strings", () => {
-		const result = timingSafeEqual("abc123", "abc1234");
-		expect(result).toBe(false);
-	});
+	test("verifyStandardWebhookPayload rejects tampered body", () => {
+		const keyBytes = new Uint8Array(32);
+		crypto.getRandomValues(keyBytes);
+		const whsec = `whsec_${Buffer.from(keyBytes).toString("base64")}`;
+		process.env.SUPABASE_WEBHOOK_SECRET = `v1,${whsec}`;
+		loadEnv();
 
-	test("verifyWebhookSignature returns false for missing secret", async () => {
-		const payload = '{"phone":"+8613800138000","otp":"123456"}';
-		const signature = "t=1234567890,v1=abc123";
+		const payload = JSON.stringify({ user: { phone: "+8613800138000" } });
+		const msgId = "msg_tamper";
+		const now = new Date();
+		const wh = new Webhook(whsec);
+		const signature = wh.sign(msgId, now, payload);
 
-		// In test env, SMS_ENABLED is not set, so signature verification may pass or fail
-		// depending on env configuration
-		const result = await verifyWebhookSignature(payload, signature);
-		// Result depends on env, we just verify it doesn't throw
-		expect(typeof result).toBe("boolean");
-	});
+		const headers = new Headers({
+			"webhook-id": msgId,
+			"webhook-timestamp": String(Math.floor(now.getTime() / 1000)),
+			"webhook-signature": signature,
+		});
 
-	test("verifyWebhookSignature returns false for invalid signature format", async () => {
-		const payload = '{"phone":"+8613800138000","otp":"123456"}';
-		const invalidSignature = "invalid-format";
-
-		const result = await verifyWebhookSignature(payload, invalidSignature);
-		expect(result).toBe(false);
-	});
-
-	test("verifyWebhookSignature returns false for old timestamp", async () => {
-		const payload = '{"phone":"+8613800138000","otp":"123456"}';
-		// Timestamp from long ago
-		const oldTimestamp = Math.floor(Date.now() / 1000) - 600; // 10 minutes ago
-		const signature = `t=${oldTimestamp},v1=abc123`;
-
-		const result = await verifyWebhookSignature(payload, signature);
-		expect(result).toBe(false);
+		expect(() =>
+			verifyStandardWebhookPayload(`${payload} `, headers),
+		).toThrow();
 	});
 });
 
-describe("sms provider - HMAC calculation", () => {
+describe("sms provider - timingSafeEqual", () => {
+	test("returns true for identical strings", () => {
+		expect(timingSafeEqual("abc123", "abc123")).toBe(true);
+	});
+
+	test("returns false for different strings", () => {
+		expect(timingSafeEqual("abc123", "xyz789")).toBe(false);
+	});
+
+	test("returns false for different length strings", () => {
+		expect(timingSafeEqual("abc123", "abc1234")).toBe(false);
+	});
+});
+
+describe("sms provider - HMAC calculation (legacy helper)", () => {
 	test("calculateHmacSha256 produces consistent output", async () => {
 		const secret = "test-secret";
 		const message = "test-message";
@@ -63,16 +90,7 @@ describe("sms provider - HMAC calculation", () => {
 		const sig2 = await calculateHmacSha256(secret, message);
 
 		expect(sig1).toBe(sig2);
-		expect(sig1.length).toBe(64); // SHA-256 hex length
+		expect(sig1.length).toBe(64);
 		expect(sig1).toMatch(/^[a-f0-9]{64}$/);
-	});
-
-	test("calculateHmacSha256 produces different output for different secrets", async () => {
-		const message = "test-message";
-
-		const sig1 = await calculateHmacSha256("secret1", message);
-		const sig2 = await calculateHmacSha256("secret2", message);
-
-		expect(sig1).not.toBe(sig2);
 	});
 });

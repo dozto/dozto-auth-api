@@ -80,9 +80,11 @@ ALIYUN_ACCESS_KEY_SECRET=your-secret   # RAM 子账号 AccessKey Secret
 ALIYUN_SMS_SIGN_NAME=your-sign-name    # 已通过审核的签名名称
 ALIYUN_SMS_TEMPLATE_CODE=SMS_xxxxxx    # 已通过审核的模板 CODE
 
-# Supabase Webhook 安全
-SUPABASE_WEBHOOK_SECRET=your-webhook-secret  # 用于签名的随机密钥
+# Supabase Webhook 安全（与 Dashboard 中 Send SMS Hook 的 secret 完全一致，常为 `v1,whsec_...`）
+SUPABASE_WEBHOOK_SECRET=v1,whsec_your-base64-secret
 ```
+
+Supabase 使用 [Standard Webhooks](https://github.com/standard-webhooks/standard-webhooks)：`webhook-id`、`webhook-timestamp`、`webhook-signature` 请求头；**不是**旧的 `x-webhook-signature: t=...,v1=...` 格式。
 
 **安全提示：**
 
@@ -124,11 +126,8 @@ bun run dev
 # 探测健康检查
 curl http://localhost:3000/webhooks/sms/health
 
-# 探测 webhook（无有效签名时会失败）
-curl -X POST http://localhost:3000/webhooks/sms/send \
-  -H "Content-Type: application/json" \
-  -H "x-webhook-signature: t=1234567890,v1=abc123" \
-  -d '{"phone":"+8613800138000","otp":"123456","message_type":"sms"}'
+# 带合法 Standard Webhooks 签名的冒烟（需配置 SUPABASE_WEBHOOK_SECRET 与 SMS_ENABLED=true）
+bun scripts/send-sms-smoke.ts "+8613800138000"
 ```
 
 ### 预发验证
@@ -153,11 +152,11 @@ curl -X POST http://localhost:3000/webhooks/sms/send \
 
 ### 现象：`Invalid signature`（401）
 
-**原因**：Webhook 签名校验失败。**检查**：
+**原因**：Standard Webhooks 验签失败。**检查**：
 
-- `SUPABASE_WEBHOOK_SECRET` 是否正确
-- Supabase 与服务器之间的时钟偏差（建议小于 5 分钟）
-- 签名格式为 `t=timestamp,v1=hex_signature`
+- Railway / `.env` 中的 `SUPABASE_WEBHOOK_SECRET` 与 Supabase Hooks 里复制的 **secret 完全一致**（含 `v1,whsec_` 前缀亦可）
+- 请求头是否包含 `webhook-id`、`webhook-timestamp`、`webhook-signature`（由 Supabase 在调用 Hook 时自动携带）
+- 服务端与 UTC 时间偏差在数分钟内（库默认约 ±5 分钟）
 
 ### 现象：阿里云返回 `isv.BUSINESS_LIMIT_CONTROL`
 

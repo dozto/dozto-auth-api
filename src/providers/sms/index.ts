@@ -12,6 +12,6 @@ export {
 export { handleSendSmsHook } from "./hook-handler.ts";
 export { createSmsRouter, smsRouterBoundary } from "./routes.ts";
 export {
-	assertValidWebhookSignature,
-	verifyWebhookSignature,
+	normalizeWebhookSecret,
+	verifyStandardWebhookPayload,
 } from "./webhook-verify.ts";

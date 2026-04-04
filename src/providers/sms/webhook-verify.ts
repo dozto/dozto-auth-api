@@ -1,100 +1,78 @@
 /**
- * Supabase Webhook Signature Verification
- * Implements Standard Webhooks / Supabase webhook signature verification
+ * Supabase Auth Hooks 使用 Standard Webhooks 规范（非 Stripe 的 `t=,v1=` 格式）。
  * @see https://supabase.com/docs/guides/auth/auth-hooks#hook-security
+ * @see https://github.com/standard-webhooks/standard-webhooks
  */
+
+import { Webhook, WebhookVerificationError } from "standardwebhooks";
 
 import { getEnv } from "../../lib/env/index.ts";
 import { createAppError } from "../../lib/errors/index.ts";
 import { getLogger } from "../../lib/logger/index.ts";
 
+/** Dashboard 中 secret 常为 `v1,whsec_<base64>`；`Webhook` 构造函数只识别 `whsec_` 前缀。 */
+export const normalizeWebhookSecret = (secret: string): string => {
+	const s = secret.trim();
+	if (s.startsWith("v1,")) {
+		return s.slice(3).trim();
+	}
+	return s;
+};
+
 /**
- * Verify Supabase webhook signature
- * Format: `t=timestamp,v1=signature`
- * @param payload Raw request body (string)
- * @param signatureHeader Value from `x-webhook-signature` header
- * @returns boolean - true if valid
+ * 将请求头转为 `standardwebhooks` 所需的 `Record`（键名大小写不敏感）。
  */
-export const verifyWebhookSignature = async (
-	payload: string,
-	signatureHeader: string,
-): Promise<boolean> => {
+const headersToRecord = (headers: Headers): Record<string, string> => {
+	const out: Record<string, string> = {};
+	headers.forEach((value, key) => {
+		out[key] = value;
+	});
+	return out;
+};
+
+/**
+ * 校验 Standard Webhooks 签名并返回解析后的 JSON 对象。
+ */
+export const verifyStandardWebhookPayload = (
+	rawBody: string,
+	headers: Headers,
+): unknown => {
 	const env = getEnv();
 	const logger = getLogger();
-	const secret = env.SUPABASE_WEBHOOK_SECRET;
+	const secret = env.SUPABASE_WEBHOOK_SECRET?.trim();
 
 	if (!secret) {
 		logger.warn(
 			"SUPABASE_WEBHOOK_SECRET not configured, skipping signature verification",
 		);
-		// In production, fail closed; in dev, allow
-		return env.NODE_ENV === "development";
+		if (env.NODE_ENV === "development") {
+			return JSON.parse(rawBody) as unknown;
+		}
+		throw createAppError({
+			code: "WEBHOOK_SECRET_MISSING",
+			message: "Webhook secret not configured",
+			statusCode: 503,
+		});
 	}
 
-	// Parse signature header: "t=1234567890,v1=abc123..."
-	const parts = signatureHeader.split(",");
-	const timestamp = parts.find((p) => p.startsWith("t="))?.slice(2);
-	const signature = parts.find((p) => p.startsWith("v1="))?.slice(3);
-
-	if (!timestamp || !signature) {
-		logger.warn("Invalid signature header format");
-		return false;
+	try {
+		const wh = new Webhook(normalizeWebhookSecret(secret));
+		return wh.verify(rawBody, headersToRecord(headers)) as unknown;
+	} catch (error) {
+		if (error instanceof WebhookVerificationError) {
+			logger.warn({ err: error }, "Standard webhook verification failed");
+			throw createAppError({
+				code: "WEBHOOK_INVALID_SIGNATURE",
+				message: "Invalid webhook signature",
+				statusCode: 401,
+			});
+		}
+		throw error;
 	}
-
-	// Check timestamp (prevent replay attacks)
-	const now = Math.floor(Date.now() / 1000);
-	const timestampNum = Number.parseInt(timestamp, 10);
-	const tolerance = 300; // 5 minutes tolerance
-
-	if (Math.abs(now - timestampNum) > tolerance) {
-		logger.warn({ timestamp: timestampNum, now }, "Webhook timestamp too old");
-		return false;
-	}
-
-	// Build signed payload: timestamp.payload
-	const signedPayload = `${timestamp}.${payload}`;
-
-	// Calculate expected signature using HMAC-SHA256
-	const expectedSignature = await calculateHmacSha256(secret, signedPayload);
-
-	// Constant-time comparison
-	const isValid = timingSafeEqual(signature, expectedSignature);
-
-	logger.debug({ isValid }, "Webhook signature verification result");
-	return isValid;
 };
 
 /**
- * Calculate HMAC-SHA256
- */
-export const calculateHmacSha256 = async (
-	secret: string,
-	message: string,
-): Promise<string> => {
-	const encoder = new TextEncoder();
-	const cryptoKey = await crypto.subtle.importKey(
-		"raw",
-		encoder.encode(secret),
-		{ name: "HMAC", hash: "SHA-256" },
-		false,
-		["sign"],
-	);
-
-	const signature = await crypto.subtle.sign(
-		"HMAC",
-		cryptoKey,
-		encoder.encode(message),
-	);
-
-	// Convert to hex
-	const bytes = new Uint8Array(signature);
-	return Array.from(bytes)
-		.map((b) => b.toString(16).padStart(2, "0"))
-		.join("");
-};
-
-/**
- * Constant-time comparison to prevent timing attacks
+ * Constant-time comparison to prevent timing attacks（保留给单元测试）
  */
 export const timingSafeEqual = (a: string, b: string): boolean => {
 	if (a.length !== b.length) {
@@ -107,19 +85,26 @@ export const timingSafeEqual = (a: string, b: string): boolean => {
 	return result === 0;
 };
 
-/**
- * Assert webhook signature is valid, throw AppError if not
- */
-export const assertValidWebhookSignature = async (
-	payload: string,
-	signatureHeader: string,
-): Promise<void> => {
-	const isValid = await verifyWebhookSignature(payload, signatureHeader);
-	if (!isValid) {
-		throw createAppError({
-			code: "WEBHOOK_INVALID_SIGNATURE",
-			message: "Invalid webhook signature",
-			statusCode: 401,
-		});
-	}
+/** @deprecated */
+export const calculateHmacSha256 = async (
+	secret: string,
+	message: string,
+): Promise<string> => {
+	const encoder = new TextEncoder();
+	const cryptoKey = await crypto.subtle.importKey(
+		"raw",
+		encoder.encode(secret),
+		{ name: "HMAC", hash: "SHA-256" },
+		false,
+		["sign"],
+	);
+	const signature = await crypto.subtle.sign(
+		"HMAC",
+		cryptoKey,
+		encoder.encode(message),
+	);
+	const bytes = new Uint8Array(signature);
+	return Array.from(bytes)
+		.map((b) => b.toString(16).padStart(2, "0"))
+		.join("");
 };

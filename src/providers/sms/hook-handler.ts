@@ -9,29 +9,60 @@ import { getEnv } from "../../lib/env/index.ts";
 import { createAppError } from "../../lib/errors/index.ts";
 import { getLogger } from "../../lib/logger/index.ts";
 import { sendOtpSms } from "./aliyun-client.ts";
-import { assertValidWebhookSignature } from "./webhook-verify.ts";
-
-/**
- * Supabase Send SMS Hook payload
- * @see https://supabase.com/docs/guides/auth/auth-hooks/send-sms-hook#payload
- */
-interface SendSmsHookPayload {
-	/** Phone number in E.164 format */
-	phone: string;
-	/** OTP code to send */
-	otp: string;
-	/** Message type: "sms" | "whatsapp" etc */
-	message_type: string;
-	/** User ID (may be null for sign-up) */
-	user_id?: string;
-}
+import { verifyStandardWebhookPayload } from "./webhook-verify.ts";
 
 /** Hook response format */
 interface HookResponse {
 	success: boolean;
-	/** Error message if failed */
 	error?: string;
 }
+
+/**
+ * Supabase 文档中的负载为 `{ user, sms }`；部分实现可能为扁平字段。
+ * @see https://supabase.com/docs/guides/auth/auth-hooks/send-sms-hook#payload
+ */
+const extractPhoneOtp = (
+	body: unknown,
+): { phone: string; otp: string; messageType: string } => {
+	if (typeof body !== "object" || body === null) {
+		throw createAppError({
+			code: "WEBHOOK_INVALID_PAYLOAD",
+			message: "Invalid webhook payload shape",
+			statusCode: 400,
+		});
+	}
+
+	const o = body as Record<string, unknown>;
+
+	const nestedUser = o.user as { phone?: string } | undefined;
+	const nestedSms = o.sms as { otp?: string } | undefined;
+	if (nestedUser?.phone && nestedSms?.otp) {
+		const messageType =
+			typeof o.message_type === "string" ? o.message_type : "sms";
+		return {
+			phone: nestedUser.phone,
+			otp: nestedSms.otp,
+			messageType,
+		};
+	}
+
+	if (typeof o.phone === "string" && typeof o.otp === "string") {
+		const messageType =
+			typeof o.message_type === "string" ? o.message_type : "sms";
+		return {
+			phone: o.phone,
+			otp: o.otp,
+			messageType,
+		};
+	}
+
+	throw createAppError({
+		code: "WEBHOOK_MISSING_FIELDS",
+		message:
+			"Missing phone/otp in webhook payload (expected user.sms or flat fields)",
+		statusCode: 400,
+	});
+};
 
 /**
  * Handle Supabase Send SMS Hook
@@ -43,7 +74,6 @@ export const handleSendSmsHook = async (
 	const logger = getLogger();
 	const env = getEnv();
 
-	// Check if SMS is enabled
 	if (!env.SMS_ENABLED) {
 		logger.warn("SMS hook called but SMS_ENABLED is not true");
 		throw createAppError({
@@ -53,53 +83,23 @@ export const handleSendSmsHook = async (
 		});
 	}
 
-	// Get raw body for signature verification
 	const rawBody = await context.req.text();
-	const signatureHeader = context.req.header("x-webhook-signature") || "";
+	const verified = verifyStandardWebhookPayload(
+		rawBody,
+		context.req.raw.headers,
+	);
 
-	// Verify webhook signature
-	await assertValidWebhookSignature(rawBody, signatureHeader);
+	const { phone, otp, messageType } = extractPhoneOtp(verified);
 
-	// Parse payload
-	let payload: SendSmsHookPayload;
-	try {
-		payload = JSON.parse(rawBody) as SendSmsHookPayload;
-	} catch (err) {
-		logger.error({ error: err }, "Failed to parse webhook payload");
-		throw createAppError({
-			code: "WEBHOOK_INVALID_PAYLOAD",
-			message: "Invalid JSON payload",
-			statusCode: 400,
-		});
-	}
-
-	// Validate payload
-	if (!payload.phone || !payload.otp) {
-		logger.error({ payload }, "Missing required fields in webhook payload");
-		throw createAppError({
-			code: "WEBHOOK_MISSING_FIELDS",
-			message: "Missing required fields: phone, otp",
-			statusCode: 400,
-		});
-	}
-
-	// Only handle SMS type
-	if (payload.message_type !== "sms") {
-		logger.debug(
-			{ messageType: payload.message_type },
-			"Ignoring non-SMS message type",
-		);
+	if (messageType !== "sms") {
+		logger.debug({ messageType }, "Ignoring non-SMS message type");
 		return context.json({ success: true } as HookResponse);
 	}
 
-	logger.info(
-		{ phone: payload.phone, userId: payload.user_id },
-		"Processing SMS hook for phone",
-	);
+	logger.info({ phone, messageType }, "Processing SMS hook for phone");
 
 	try {
-		// Send SMS via Alibaba Cloud
-		const result = await sendOtpSms(payload.phone, payload.otp);
+		const result = await sendOtpSms(phone, otp);
 
 		if (result.code !== "OK") {
 			logger.error(
@@ -120,13 +120,13 @@ export const handleSendSmsHook = async (
 		}
 
 		logger.info(
-			{ requestId: result.requestId, phone: payload.phone },
+			{ requestId: result.requestId, phone },
 			"SMS sent successfully via Aliyun",
 		);
 
 		return context.json({ success: true } as HookResponse);
 	} catch (error) {
-		logger.error({ error, phone: payload.phone }, "Failed to send SMS");
+		logger.error({ error, phone }, "Failed to send SMS");
 		return context.json(
 			{
 				success: false,
