@@ -90,7 +90,10 @@ src/
 | --- | --- |
 | `GET /health` | 根应用直接注册；响应中的 `service` 为 `getEnv().SERVICE_NAME` |
 | `/auth/*` | `auth/routes.ts`：`createAuthRouter()`，挂载前缀 `/auth` |
+| `POST /auth/users` | 密码凭证**注册**；JSON 为 `{ email, password }` 或 `{ phone, password }`（互斥，见 `passwordCredentialBodySchema`） |
+| `POST /auth/sessions` | 密码凭证**登录**（建立会话）；请求体形状同 `POST /auth/users` |
 | `/sse/*` | `sse/routes.ts`：`createSseRouter()`，挂载前缀 `/sse`（如 `GET /sse/stream`） |
+| `/webhooks/*` | `providers/sms/routes.ts` 等：第三方回调（如 Send SMS Hook） |
 
 域内仍遵循：`routes` → `controller` → `service` → `repository`；**`helper`** 仅被同域模块引用（如 `repository` 调错误映射、`service` 调响应形状映射），**不**替代 `repository` 的网关入口职责。详见 §4.2.1。
 
@@ -148,6 +151,7 @@ src/
 
 | 日期 | 内容 |
 | --- | --- |
+| 2026-04-04 | 密码凭证对外路径：`POST /auth/users`（注册）、`POST /auth/sessions`（登录）；§4.3 补充 `/webhooks`；请求体 `passwordCredentialBodySchema`（邮箱或手机号 + 密码，互斥） |
 | 2026-04-04 | 架构优化：`boot.ts` logger-not-ready 回退 `console.error`；`hono.ts` 新增 `app.onError()` 全局错误兜底；`controller` 移除 try/catch 依赖全局处理；`infra/supabase/client.ts` 改为惰性 `getSupabase()`；`service` 提取 `assertPasswordEnabled` 到 `helper`；`AuthPasswordJSONContext` 移至 `controller` 私有类型；`health` macOS `vm_stat` 结果缓存 5s；补测试覆盖 `helper`、`service`、`errors` |
 | 2026-04-04 | `session-mapper` 并入 `auth/helper.ts`；新增 §4.2.1：各业务域可有 `helper.ts` 的通用约定 |
 | 2026-04-04 | `auth/helper.ts`：`AuthError` → `AppError` 映射；§3/§4.2/§4.3 说明域内 `helper` 与 `repository` 边界 |

@@ -6,7 +6,7 @@
 - Story ID: `ST-001-02`
 - Epic ID: `EP-001`
 - Title: Password registration toggle for phone sign-up
-- Status: `planned`
+- Status: `done`
 - Owner:
 - Created: 2026-04-04
 - Updated: 2026-04-04

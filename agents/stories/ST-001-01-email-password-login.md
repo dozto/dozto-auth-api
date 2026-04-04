@@ -5,7 +5,7 @@
 - Story ID: `ST-001-01`
 - Epic ID: `EP-001`
 - Title: Email + Password Sign-up and Sign-in
-- Status: `planned`
+- Status: `done`
 - Owner:
 - Created: 2026-04-04
 - Updated: 2026-04-04

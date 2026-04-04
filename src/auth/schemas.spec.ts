@@ -1,0 +1,181 @@
+import { describe, expect, it } from "bun:test";
+
+import {
+	emailPasswordSchema,
+	passwordCredentialBodySchema,
+	passwordCredentialsSchema,
+	passwordRule,
+	phonePasswordSchema,
+} from "./schemas.ts";
+
+describe("passwordRule", () => {
+	it("accepts password with 8-72 characters", () => {
+		expect(() => passwordRule.parse("password123")).not.toThrow();
+		expect(() => passwordRule.parse("a".repeat(8))).not.toThrow();
+		expect(() => passwordRule.parse("a".repeat(72))).not.toThrow();
+	});
+
+	it("rejects password shorter than 8 characters", () => {
+		expect(() => passwordRule.parse("short1")).toThrow();
+		expect(() => passwordRule.parse("a".repeat(7))).toThrow();
+	});
+
+	it("rejects password longer than 72 characters", () => {
+		expect(() => passwordRule.parse("a".repeat(73))).toThrow();
+	});
+});
+
+describe("emailPasswordSchema", () => {
+	it("accepts valid email and password", () => {
+		const result = emailPasswordSchema.parse({
+			email: "user@example.com",
+			password: "securePassword123",
+		});
+		expect(result.email).toBe("user@example.com");
+		expect(result.password).toBe("securePassword123");
+	});
+
+	it("rejects invalid email", () => {
+		expect(() =>
+			emailPasswordSchema.parse({
+				email: "not-an-email",
+				password: "password123",
+			}),
+		).toThrow();
+	});
+
+	it("rejects missing email", () => {
+		expect(() =>
+			emailPasswordSchema.parse({
+				password: "password123",
+			}),
+		).toThrow();
+	});
+
+	it("rejects missing password", () => {
+		expect(() =>
+			emailPasswordSchema.parse({
+				email: "user@example.com",
+			}),
+		).toThrow();
+	});
+
+	it("rejects short password", () => {
+		expect(() =>
+			emailPasswordSchema.parse({
+				email: "user@example.com",
+				password: "short",
+			}),
+		).toThrow();
+	});
+});
+
+describe("phonePasswordSchema", () => {
+	it("accepts valid phone and password", () => {
+		const result = phonePasswordSchema.parse({
+			phone: "+8613800138000",
+			password: "securePassword123",
+		});
+		expect(result.phone).toBe("+8613800138000");
+		expect(result.password).toBe("securePassword123");
+	});
+
+	it("accepts phone number without country code", () => {
+		const result = phonePasswordSchema.parse({
+			phone: "13800138000",
+			password: "password123",
+		});
+		expect(result.phone).toBe("13800138000");
+	});
+
+	it("rejects missing phone", () => {
+		expect(() =>
+			phonePasswordSchema.parse({
+				password: "password123",
+			}),
+		).toThrow();
+	});
+
+	it("rejects missing password", () => {
+		expect(() =>
+			phonePasswordSchema.parse({
+				phone: "13800138000",
+			}),
+		).toThrow();
+	});
+
+	it("rejects phone shorter than 5 characters", () => {
+		expect(() =>
+			phonePasswordSchema.parse({
+				phone: "1234",
+				password: "password123",
+			}),
+		).toThrow();
+	});
+
+	it("rejects phone longer than 20 characters", () => {
+		expect(() =>
+			phonePasswordSchema.parse({
+				phone: "1".repeat(21),
+				password: "password123",
+			}),
+		).toThrow();
+	});
+
+	it("rejects short password", () => {
+		expect(() =>
+			phonePasswordSchema.parse({
+				phone: "13800138000",
+				password: "short",
+			}),
+		).toThrow();
+	});
+});
+
+describe("passwordCredentialBodySchema", () => {
+	it("accepts email + password", () => {
+		const result = passwordCredentialBodySchema.parse({
+			email: "user@example.com",
+			password: "securePassword123",
+		});
+		expect("email" in result).toBe(true);
+	});
+
+	it("accepts phone + password", () => {
+		const result = passwordCredentialBodySchema.parse({
+			phone: "+8613800138000",
+			password: "securePassword123",
+		});
+		expect("phone" in result).toBe(true);
+	});
+
+	it("rejects body with both email and phone", () => {
+		expect(() =>
+			passwordCredentialBodySchema.parse({
+				email: "user@example.com",
+				phone: "+8613800138000",
+				password: "securePassword123",
+			}),
+		).toThrow();
+	});
+});
+
+describe("passwordCredentialsSchema (backward compatibility)", () => {
+	it("works the same as emailPasswordSchema", () => {
+		const result = passwordCredentialsSchema.parse({
+			email: "user@example.com",
+			password: "securePassword123",
+		});
+		expect(result.email).toBe("user@example.com");
+		expect(result.password).toBe("securePassword123");
+	});
+
+	it("rejects invalid input", () => {
+		expect(() =>
+			passwordCredentialsSchema.parse({
+				email: "not-an-email",
+				password: "short",
+			}),
+		).toThrow();
+	});
+});

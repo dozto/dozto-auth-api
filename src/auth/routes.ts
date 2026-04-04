@@ -2,7 +2,7 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 
 import * as controller from "./controller.ts";
-import { passwordCredentialsSchema } from "./schemas.ts";
+import { passwordCredentialBodySchema } from "./schemas.ts";
 
 /** 对外挂载路径（由 `src/hono.ts` 使用 `app.route(mountPath, …)` 挂载）。 */
 export const authRouterBoundary = {
@@ -14,21 +14,23 @@ export const authRouterBoundary = {
 } as const;
 
 /**
- * 认证域子路由（相对路径，如 `/password/sign-in`）。
+ * 认证域子路由（相对路径）。
+ * - `POST /users`：密码凭证注册（请求体为邮箱或手机号 + 密码）
+ * - `POST /sessions`：密码凭证登录（建立会话）
  * 完整 URL 前缀由根路由挂载为 `/auth`。
  */
 export const createAuthRouter = () => {
 	const router = new Hono();
 
 	router.post(
-		"/password/sign-up",
-		zValidator("json", passwordCredentialsSchema),
-		controller.passwordSignUp,
+		"/users",
+		zValidator("json", passwordCredentialBodySchema),
+		controller.registerWithPassword,
 	);
 	router.post(
-		"/password/sign-in",
-		zValidator("json", passwordCredentialsSchema),
-		controller.passwordSignIn,
+		"/sessions",
+		zValidator("json", passwordCredentialBodySchema),
+		controller.signInWithPassword,
 	);
 
 	return router;

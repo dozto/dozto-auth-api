@@ -6,7 +6,7 @@
 - Story ID: `ST-001-01`
 - Epic ID: `EP-001`
 - Title: Align email password sign-up with unified session response
-- Status: `planned`
+- Status: `done`
 - Owner:
 - Created: 2026-04-04
 - Updated: 2026-04-04
