@@ -1,15 +1,9 @@
 import { z } from "zod";
 
-export const authSchemaBoundary = z.object({
-	phase: z.literal("EP-001"),
-	status: z.literal("contract-only"),
-	note: z.string(),
+/** 邮箱 + 密码注册 / 登录（与 Supabase Auth 默认密码策略对齐的最小长度）。 */
+export const passwordCredentialsSchema = z.object({
+	email: z.email(),
+	password: z.string().min(8).max(72),
 });
 
-export type AuthSchemaBoundary = z.infer<typeof authSchemaBoundary>;
-
-export const authSchemaBoundaryNote: AuthSchemaBoundary = {
-	phase: "EP-001",
-	status: "contract-only",
-	note: "Detailed auth request and response schemas are added in later business stories.",
-};
+export type PasswordCredentials = z.infer<typeof passwordCredentialsSchema>;

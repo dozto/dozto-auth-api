@@ -1,162 +1,157 @@
 # Agents Directory Guide
 
-This directory is the working memory for agents operating on this project.
-It separates stable context from execution state so agents can understand the
-project quickly, plan work consistently, and avoid rewriting the same context
-in multiple places.
+`agents/` is the **working memory** for people and agents on this project. It separates **stable intent** from **execution state** so context stays in one place, plans stay consistent, and the same facts are not rewritten in multiple files.
 
-## Directory Purpose
+**At a glance**
 
-Use `agents/` to answer six questions:
+- **What to read first:** this file, then `README.md` / `CLAUDE.md`, then `ROADMAP.md`.
+- **Where truth lives:** scope in `REQUIREMENTS.md`, shape in `ARCHITECTURE.md`; progress in `ROADMAP.md` + `tasks/`, not as a substitute for those.
+- **How work is traced:** Requirement → Epic → Story → Task → test or verification evidence.
+
+Runtime, dependency, and command conventions live in the repo root (`README.md`, `CLAUDE.md`). **Do not duplicate them here** unless a task directly depends on that detail.
+
+---
+
+## What `agents/` answers
 
 1. What does the project need?
 2. How should it be built?
-3. What is the current overall progress?
-4. How is the work grouped into epics?
-5. How is each epic broken down into stories?
-6. What concrete tasks should be executed next?
+3. What is the overall progress?
+4. How is work grouped into epics?
+5. How is each epic broken into stories?
+6. What tasks should run next?
 
-This directory is intentionally lightweight. Runtime, dependency, and command
-conventions already live in the repository root docs, especially `README.md`
-and `CLAUDE.md`. Do not duplicate that information here unless a task depends
-on it directly.
+---
 
-## File Responsibilities
+## Document map
 
-| Path | Responsibility | Does not own |
+| Path | Owns | Does not own |
 | --- | --- | --- |
-| `AGENTS.md` | Entry point for agents. Explains reading order, document boundaries, ID conventions, and update workflow. | Detailed product requirements, architecture details, or task-by-task implementation notes. |
-| `REQUIREMENTS.md` | Source of truth for scope, constraints, acceptance boundaries, and non-goals. | Task progress, implementation sequencing, or low-level technical design. |
-| `ARCHITECTURE.md` | Source of truth for technical approach, module boundaries, data flow, and major design decisions. | Business scope, detailed task tracking, or story acceptance status. |
-| `ROADMAP.md` | Top-level task tracker. Summarizes active epics, active stories, blockers, next focus, and cross-task status. | Full task detail for every item or the complete requirement specification. |
-| `stories/` | Houses epic and story documents. Epics define larger work streams. Stories define implementable requirement slices with acceptance criteria. | Detailed execution logs or the global project status. |
-| `tasks/` | Houses executable work items. Each task belongs to exactly one story and should explain how its tests validate story acceptance criteria. | Long-form product context or architecture rationale. |
+| `AGENTS.md` | Entry point: reading order, boundaries, IDs, workflows | Product requirements, architecture detail, per-task implementation notes |
+| `REQUIREMENTS.md` | Scope, constraints, acceptance boundaries, non-goals | Task progress, sequencing, low-level design |
+| `ARCHITECTURE.md` | Technical approach, module boundaries, data flow, major decisions | Business scope, task tracking, story acceptance status |
+| `ROADMAP.md` | Active epics/stories, blockers, next focus, rolled-up status | Full spec of every task or requirement |
+| `stories/` | Epic and story docs: planning boundaries and **acceptance criteria** | Execution logs, global status |
+| `tasks/` | Executable tasks; how tests verify story acceptance | Long product or architecture essays |
 
-## Language Policy
+**Templates:** use `agents/stories/_epic_template.md`, `agents/stories/_story_template.md`, and `agents/tasks/_template.md` when creating new planning artifacts.
 
-- `agents/REQUIREMENTS.md`, `agents/ARCHITECTURE.md`, and `agents/ROADMAP.md` must be maintained in Chinese.
-- Other files under `agents/` should be maintained in English by default.
-- When adding new content, keep the language of the target file consistent instead of mixing Chinese and English in the same document unless there is a strong reason.
+**Tests (see `agents/ARCHITECTURE.md` §5):**
 
-## Hierarchy And Traceability
+- Unit: `*.spec.ts` next to source under `src/`; no `__tests__/` folders; no unit tests for `src/boot.ts` or `src/hono.ts`.
+- Integration: `test/intg/**/*.intg.spec.ts` (`.spec` required for Bun discovery).
+- E2E: `test/e2e/**/*.e2e.spec.ts`.
 
-Work must follow this chain:
+---
 
-`Requirement -> Epic -> Story -> Task -> Test evidence`
+## Language policy
 
-Rules:
+- `REQUIREMENTS.md`, `ARCHITECTURE.md`, and `ROADMAP.md` **must** stay in **Chinese**.
+- Other files under `agents/` default to **English** (including this file).
+- Keep one language per file unless there is a strong reason to mix.
 
-- A requirement is first broken down into one or more epics.
-- Each story belongs to exactly one epic.
-- Each story must include explicit acceptance criteria.
-- Each task belongs to exactly one story.
-- Each task must state how its tests or verification steps map back to the
-  story acceptance criteria.
-- `ROADMAP.md` rolls up status from epics, stories, and tasks, but it is not
-  the source of truth for their full content.
+---
 
-## ID Convention
+## Traceability chain
 
-IDs must make type and parent relationship obvious.
+Work follows:
 
-- Epic: `EP-001`
-- Story: `ST-001-01`
-- Task: `TK-001-01-01`
+`Requirement → Epic → Story → Task → test evidence`
 
-Meaning:
+| Rule | Detail |
+| --- | --- |
+| Breakdown | Requirements split into one or more epics; each story belongs to exactly one epic |
+| Stories | Must have explicit, testable acceptance criteria |
+| Tasks | Each task belongs to exactly one story and states how verification maps to those criteria |
+| `ROADMAP.md` | Summarizes status; it is **not** the source of truth for full epic/story/task content |
 
-- `EP-001` is epic 1.
-- `ST-001-01` is story 1 under epic 1.
-- `TK-001-01-01` is task 1 under story 1 under epic 1.
+**Layering (stability vs. churn):** documents closer to execution may be more specific and short-lived. Documents closer to project intent should stay more stable.
 
-Recommended file naming:
+---
+
+## ID and file naming
+
+IDs must encode type and parent relationship.
+
+| Kind | Pattern | Example |
+| --- | --- | --- |
+| Epic | `EP-NNN` | `EP-001` |
+| Story | `ST-NNN-MM` (story MM under epic NNN) | `ST-001-01` |
+| Task | `TK-NNN-MM-KK` (task KK under story `ST-NNN-MM`) | `TK-001-01-01` |
+
+**Recommended filenames**
 
 - `stories/EP-001-auth-foundation.md`
 - `stories/ST-001-01-create-access-token-flow.md`
 - `tasks/TK-001-01-01-add-token-service.md`
 
-## Recommended Reading Order
+---
 
-Agents should read documents in this order:
+## Reading order
 
-1. `agents/AGENTS.md`
+**Default sequence**
+
+1. `agents/AGENTS.md` (this file)
 2. `README.md`
 3. `CLAUDE.md`
 4. `agents/ROADMAP.md`
 5. `agents/REQUIREMENTS.md`
 6. `agents/ARCHITECTURE.md`
-7. The relevant epic in `agents/stories/`
-8. The relevant story in `agents/stories/`
-9. The relevant task in `agents/tasks/`
+7. Relevant epic → story → task under `agents/stories/` and `agents/tasks/`
 
-Use this order as a default. If the task is purely technical, jump from
-`ROADMAP.md` to `ARCHITECTURE.md` earlier. If the task starts from a new
-feature request, read `REQUIREMENTS.md` before looking at tasks.
+**Shortcuts**
 
-## Working Model
+- Mostly technical work: after `ROADMAP.md`, you may jump to `ARCHITECTURE.md` before deep-diving requirements.
+- New or unclear product scope: read `REQUIREMENTS.md` before tasks.
 
-Treat the documents as layered context:
+---
 
-- `REQUIREMENTS.md` defines what must be true.
-- `ARCHITECTURE.md` defines how the system should be shaped.
-- `ROADMAP.md` defines what is currently being worked on and what is blocked.
-- Epics define larger work streams and planning boundaries.
-- Stories define requirement slices and acceptance criteria.
-- Tasks define concrete execution units.
+## Workflows
 
-The closer a document is to execution, the more specific and short-lived it can
-be. The closer it is to project intent, the more stable it should remain.
+### New feature or change request
 
-## Update Workflow
+1. Update `REQUIREMENTS.md` if scope, acceptance, or constraints changed.
+2. Update `ARCHITECTURE.md` if system shape or boundaries changed.
+3. Add an epic under `stories/`, then stories, then tasks under `tasks/`.
+4. Update `ROADMAP.md` with active epic/story, task status, and blockers.
 
-When a new feature or change request arrives:
+### Executing existing work
 
-1. Update `REQUIREMENTS.md` if scope, acceptance boundaries, or constraints changed.
-2. Update `ARCHITECTURE.md` if the technical shape or system boundaries changed.
-3. Create a new epic in `stories/` for the work stream.
-4. Break the epic into one or more stories in `stories/`.
-5. Break each story into executable tasks in `tasks/`.
-6. Reflect active epic, active story, task status, and blockers in `ROADMAP.md`.
+1. Start from `ROADMAP.md` for priority.
+2. Open the linked epic, story, and task.
+3. Implement; update **`tasks/` first**, then roll status into `ROADMAP.md`.
 
-When executing existing work:
+---
 
-1. Start from `ROADMAP.md` to identify the current priority.
-2. Read the linked epic, story, and task documents.
-3. Perform the work.
-4. Update `tasks/` first, then roll up the summary into `ROADMAP.md`.
+## Change policy (completed work)
 
-## Change Policy
+Epics and stories marked **done** are **historical records**.
 
-Completed epics and completed stories are historical records.
+- Do not repurpose a completed epic or story to mean new scope or new behavior.
+- Follow-up work gets **new** epic/story IDs and links such as `Follow-up to`, `Supersedes`, or `Related to`.
 
-- Do not rewrite a completed epic to represent new scope.
-- Do not rewrite a completed story to represent changed behavior.
-- If new or changed work is needed after completion, create a new epic and new
-  story IDs for that change.
-- Link follow-up work back to the previous epic or story using references such
-  as `Follow-up to`, `Supersedes`, or `Related to`.
+**Tasks** may change while active. After a task is done, add a **new** task for follow-ups instead of redefining the completed one.
 
-Tasks may continue to update while work is active because they track execution
-state. Once a task is done, prefer creating a new task for follow-up work
-instead of changing the meaning of the completed one.
+---
 
-## Maintenance Rules
+## Maintenance
 
-- Keep each fact in one primary place.
-- Prefer linking to another document over copying its contents.
-- Put stable truth in `REQUIREMENTS.md` or `ARCHITECTURE.md`.
-- If a file update or code change depends on a problem, requirement, or rule that is not described clearly in `agents/`, confirm it first before making the update.
-- Put changing execution state in `ROADMAP.md` and `tasks/`.
-- Keep epic files focused on planning context and scope.
-- Keep story files focused on intent and acceptance criteria.
-- Keep tasks actionable; if a task becomes too large, split it.
-- Make acceptance criteria traceable from story to task verification.
+- **Single source of truth:** each fact has one primary home; link elsewhere instead of copying.
+- **Stable vs. moving:** stable truth in `REQUIREMENTS.md` or `ARCHITECTURE.md`; execution state in `ROADMAP.md` and `tasks/`.
+- **Clarity before edits:** if a requirement or rule is not clear in `agents/`, confirm it before changing code or docs.
+- **Scope of files:** epics = planning and boundaries; stories = intent and acceptance criteria; tasks = actionable steps and verification.
+- **Traceability:** story acceptance criteria must map to task tests or verification steps.
 
-## Practical Guidance
+---
 
-- If an agent needs project context, start here and then follow the reading order.
-- If an agent needs current execution status, open `ROADMAP.md`.
-- If an agent needs to understand why a change exists, open `REQUIREMENTS.md`.
-- If an agent needs to understand how a change fits the system, open `ARCHITECTURE.md`.
-- If an agent needs to plan new work, create an epic first, then create stories.
-- If an agent needs to do work, use the story and task documents as the execution layer.
+## Quick lookup
+
+| I need… | Open |
+| --- | --- |
+| Current focus and blockers | `ROADMAP.md` |
+| Why something exists | `REQUIREMENTS.md` |
+| How it fits the system | `ARCHITECTURE.md` |
+| What to implement next | Linked story + tasks from `ROADMAP.md` |
+| To plan new work | New epic, then stories (then tasks) |
+
+Start with this file, then follow the default reading order above.

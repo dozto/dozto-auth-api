@@ -1,3 +1,6 @@
+# local scratch (scripts, temp files; not part of production)
+support/
+
 # dependencies (bun install)
 node_modules
 

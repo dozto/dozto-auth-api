@@ -1,19 +1,48 @@
-import { Hono } from "hono";
+import { getEnv, loadEnv } from "./lib/env/index.ts";
+import { getLogger, initLogger } from "./lib/logger/index.ts";
 
-import { authRouterBoundary } from "./auth/router";
-import { userRouterBoundary } from "./user/router";
+let loggerReady = false;
 
-export function createApp() {
-	const app = new Hono();
+const logFatal = (err: unknown, msg: string): void => {
+	if (loggerReady) {
+		getLogger().fatal(err, msg);
+	} else {
+		const detail = err instanceof Error ? err.message : String(err);
+		console.error(`${msg} ${detail}`);
+		if (err instanceof Error && err.stack) {
+			console.error(err.stack);
+		}
+	}
+};
 
-	app.get("/", (context) =>
-		context.json({
-			service: "dozto-auth-api",
-			phase: "EP-001",
-			status: "foundation-ready",
-			routeGroups: [authRouterBoundary.mountPath, userRouterBoundary.mountPath],
-		}),
-	);
+const boot = async (): Promise<void> => {
+	try {
+		loadEnv();
+		initLogger();
+		loggerReady = true;
 
-	return app;
-}
+		const log = getLogger();
+		log.info("[BOOT] Load environment completed.");
+		log.info("[BOOT] Initialize logger completed.");
+
+		const { verifySupabaseConnection } = await import(
+			"./infra/supabase/verify.ts"
+		);
+		await verifySupabaseConnection();
+		log.info("[BOOT] Verify Supabase connection completed.");
+
+		const { app } = await import("./hono.ts");
+		log.info("[BOOT] Load HTTP application completed.");
+
+		if (import.meta.main) {
+			const port = getEnv().PORT;
+			Bun.serve({ fetch: app.fetch, port });
+			log.info(`[BOOT] Start HTTP server on port ${port}`);
+		}
+	} catch (err) {
+		logFatal(err, "[BOOT] Boot failed.");
+		process.exit(1);
+	}
+};
+
+await boot();
