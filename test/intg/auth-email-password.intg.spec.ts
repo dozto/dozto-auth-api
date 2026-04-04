@@ -17,6 +17,19 @@ describe("POST /auth/users (email + password)", () => {
 		loadEnv();
 	});
 
+	test("returns 400 when both email and phone are present", async () => {
+		const response = await app.request("http://localhost/auth/users", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				email: "user@example.com",
+				phone: "+8613800138000",
+				password: "password123",
+			}),
+		});
+		expect(response.status).toBe(400);
+	});
+
 	test("returns 400 for invalid email", async () => {
 		const response = await app.request("http://localhost/auth/users", {
 			method: "POST",
@@ -103,6 +116,28 @@ describe("POST /auth/sessions (email + password)", () => {
 			body: JSON.stringify({
 				email: "not-an-email",
 				password: "password123",
+			}),
+		});
+		expect(response.status).toBe(400);
+	});
+
+	test("returns 400 for missing email", async () => {
+		const response = await app.request("http://localhost/auth/sessions", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				password: "password123",
+			}),
+		});
+		expect(response.status).toBe(400);
+	});
+
+	test("returns 400 for missing password", async () => {
+		const response = await app.request("http://localhost/auth/sessions", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				email: "test@example.com",
 			}),
 		});
 		expect(response.status).toBe(400);

@@ -33,4 +33,9 @@ describe("app (hono)", () => {
 		expect(response.status).toBe(200);
 		expect(response.headers.get("content-type")).toContain("text/event-stream");
 	});
+
+	test("GET /nonexistent-route returns 404", async () => {
+		const response = await app.request("http://localhost/nonexistent-route");
+		expect(response.status).toBe(404);
+	});
 });

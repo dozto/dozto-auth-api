@@ -45,6 +45,7 @@ export const mapSessionResponse = (options: {
 			? {
 					id: user.id,
 					email: user.email ?? null,
+					phone: user.phone ?? null,
 				}
 			: null,
 	};

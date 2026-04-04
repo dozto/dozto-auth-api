@@ -71,3 +71,47 @@ test("SERVICE_NAME falls back when blank", () => {
 		"dozto-auth-api",
 	);
 });
+
+test("when SMS_ENABLED is true, ALIYUN_SMS_SIGN_NAME and TEMPLATE_CODE are required", () => {
+	expect(() =>
+		envSchema.parse({
+			...base,
+			SMS_ENABLED: "true",
+		}),
+	).toThrow();
+
+	expect(() =>
+		envSchema.parse({
+			...base,
+			SMS_ENABLED: "true",
+			ALIYUN_SMS_SIGN_NAME: "MySign",
+		}),
+	).toThrow();
+
+	expect(() =>
+		envSchema.parse({
+			...base,
+			SMS_ENABLED: "true",
+			ALIYUN_SMS_TEMPLATE_CODE: "SMS_001",
+		}),
+	).toThrow();
+
+	expect(() =>
+		envSchema.parse({
+			...base,
+			SMS_ENABLED: "true",
+			ALIYUN_SMS_SIGN_NAME: "   ",
+			ALIYUN_SMS_TEMPLATE_CODE: "SMS_001",
+		}),
+	).toThrow();
+
+	const ok = envSchema.parse({
+		...base,
+		SMS_ENABLED: "true",
+		ALIYUN_SMS_SIGN_NAME: "MySign",
+		ALIYUN_SMS_TEMPLATE_CODE: "SMS_001",
+	});
+	expect(ok.SMS_ENABLED).toBe(true);
+	expect(ok.ALIYUN_SMS_SIGN_NAME).toBe("MySign");
+	expect(ok.ALIYUN_SMS_TEMPLATE_CODE).toBe("SMS_001");
+});

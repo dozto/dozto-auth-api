@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 import { authRouterBoundary, createAuthRouter } from "./auth/routes.ts";
 import { getEnv } from "./lib/env/index.ts";
@@ -18,7 +19,7 @@ app.onError((err, context) => {
 	if (isAppError(err)) {
 		return context.json(
 			{ error: { code: err.payload.code, message: err.payload.message } },
-			err.payload.statusCode as 400,
+			err.payload.statusCode as ContentfulStatusCode,
 		);
 	}
 	getLogger().error(err, "Unhandled error");

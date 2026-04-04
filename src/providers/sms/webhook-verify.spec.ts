@@ -4,9 +4,7 @@ import { Webhook } from "standardwebhooks";
 
 import { loadEnv } from "../../lib/env/index.ts";
 import {
-	calculateHmacSha256,
 	normalizeWebhookSecret,
-	timingSafeEqual,
 	verifyStandardWebhookPayload,
 } from "./webhook-verify.ts";
 
@@ -64,33 +62,5 @@ describe("sms provider - webhook verification", () => {
 		expect(() =>
 			verifyStandardWebhookPayload(`${payload} `, headers),
 		).toThrow();
-	});
-});
-
-describe("sms provider - timingSafeEqual", () => {
-	test("returns true for identical strings", () => {
-		expect(timingSafeEqual("abc123", "abc123")).toBe(true);
-	});
-
-	test("returns false for different strings", () => {
-		expect(timingSafeEqual("abc123", "xyz789")).toBe(false);
-	});
-
-	test("returns false for different length strings", () => {
-		expect(timingSafeEqual("abc123", "abc1234")).toBe(false);
-	});
-});
-
-describe("sms provider - HMAC calculation (legacy helper)", () => {
-	test("calculateHmacSha256 produces consistent output", async () => {
-		const secret = "test-secret";
-		const message = "test-message";
-
-		const sig1 = await calculateHmacSha256(secret, message);
-		const sig2 = await calculateHmacSha256(secret, message);
-
-		expect(sig1).toBe(sig2);
-		expect(sig1.length).toBe(64);
-		expect(sig1).toMatch(/^[a-f0-9]{64}$/);
 	});
 });

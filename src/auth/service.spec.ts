@@ -54,6 +54,7 @@ describe("auth service – mapSessionResponse delegation", () => {
 		const result = mapSessionResponse(input as never);
 		expect(result.session?.accessToken).toBe("at");
 		expect(result.user?.id).toBe("u1");
+		expect(result.user?.phone).toBeNull();
 	});
 });
 

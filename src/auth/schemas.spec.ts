@@ -7,7 +7,21 @@ import {
 	passwordRule,
 	phoneOtpVerificationSchema,
 	phonePasswordSchema,
+	phoneRule,
 } from "./schemas.ts";
+
+describe("phoneRule", () => {
+	it("accepts phone length 5–20", () => {
+		expect(phoneRule.parse("12345")).toBe("12345");
+		expect(phoneRule.parse("+8613800138000")).toBe("+8613800138000");
+		expect(phoneRule.parse("1".repeat(20))).toBe("1".repeat(20));
+	});
+
+	it("rejects phone shorter than 5 or longer than 20", () => {
+		expect(() => phoneRule.parse("1234")).toThrow();
+		expect(() => phoneRule.parse("1".repeat(21))).toThrow();
+	});
+});
 
 describe("passwordRule", () => {
 	it("accepts password with 8-72 characters", () => {

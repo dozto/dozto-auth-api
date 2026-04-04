@@ -122,6 +122,28 @@ describe("POST /auth/sessions (phone + password)", () => {
 		expect(response.status).toBe(400);
 	});
 
+	test("returns 400 for missing phone", async () => {
+		const response = await app.request("http://localhost/auth/sessions", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				password: "password123",
+			}),
+		});
+		expect(response.status).toBe(400);
+	});
+
+	test("returns 400 for missing password", async () => {
+		const response = await app.request("http://localhost/auth/sessions", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				phone: "+8613800138000",
+			}),
+		});
+		expect(response.status).toBe(400);
+	});
+
 	test("returns 400 for short password", async () => {
 		const response = await app.request("http://localhost/auth/sessions", {
 			method: "POST",
@@ -204,6 +226,20 @@ describe("POST /auth/verifications/phone-otp", () => {
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					phone: "+8613800138000",
+				}),
+			},
+		);
+		expect(response.status).toBe(400);
+	});
+
+	test("returns 400 for missing phone", async () => {
+		const response = await app.request(
+			"http://localhost/auth/verifications/phone-otp",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					token: "123456",
 				}),
 			},
 		);

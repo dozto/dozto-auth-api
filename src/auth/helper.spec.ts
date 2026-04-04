@@ -91,7 +91,11 @@ describe("mapSessionResponse", () => {
 			expiresAt: 1700000000,
 			tokenType: "bearer",
 		});
-		expect(result.user).toEqual({ id: "u1", email: "a@b.co" });
+		expect(result.user).toEqual({
+			id: "u1",
+			email: "a@b.co",
+			phone: null,
+		});
 	});
 
 	test("returns null when session and user are null", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createAppError, isAppError, toErrorResponse } from "./index.ts";
+import { createAppError, isAppError } from "./index.ts";
 
 describe("createAppError", () => {
 	test("creates an AppError with correct payload", () => {
@@ -34,39 +34,5 @@ describe("isAppError", () => {
 		expect(isAppError("text")).toBe(false);
 		expect(isAppError(null)).toBe(false);
 		expect(isAppError(undefined)).toBe(false);
-	});
-});
-
-describe("toErrorResponse", () => {
-	test("returns structured body for AppError", async () => {
-		const err = createAppError({
-			message: "not found",
-			code: "NOT_FOUND",
-			statusCode: 404,
-		});
-		const res = toErrorResponse(err);
-		expect(res.status).toBe(404);
-		const body = (await res.json()) as {
-			error: { code: string; message: string };
-		};
-		expect(body.error.code).toBe("NOT_FOUND");
-		expect(body.error.message).toBe("not found");
-	});
-
-	test("returns 500 for plain Error", async () => {
-		const res = toErrorResponse(new Error("boom"));
-		expect(res.status).toBe(500);
-		const body = (await res.json()) as {
-			error: { code: string; message: string };
-		};
-		expect(body.error.code).toBe("INTERNAL_ERROR");
-		expect(body.error.message).toBe("boom");
-	});
-
-	test("returns 500 for non-error values", async () => {
-		const res = toErrorResponse("random");
-		expect(res.status).toBe(500);
-		const body = (await res.json()) as { error: { code: string } };
-		expect(body.error.code).toBe("INTERNAL_ERROR");
 	});
 });

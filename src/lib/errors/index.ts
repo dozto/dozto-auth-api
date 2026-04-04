@@ -29,30 +29,3 @@ export const isAppError = (error: unknown): error is AppError => {
 		typeof (p as AppErrorPayload).statusCode === "number"
 	);
 };
-
-export const toErrorResponse = (error: unknown): Response => {
-	if (isAppError(error)) {
-		return Response.json(
-			{
-				error: {
-					code: error.payload.code,
-					message: error.payload.message,
-				},
-			},
-			{ status: error.payload.statusCode },
-		);
-	}
-
-	const message =
-		error instanceof Error ? error.message : "Unexpected internal error.";
-
-	return Response.json(
-		{
-			error: {
-				code: "INTERNAL_ERROR",
-				message,
-			},
-		},
-		{ status: 500 },
-	);
-};

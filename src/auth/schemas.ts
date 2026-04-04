@@ -3,6 +3,9 @@ import { z } from "zod";
 /** 密码验证规则（最小 8 位，最大 72 位）。 */
 export const passwordRule = z.string().min(8).max(72);
 
+/** 手机号格式（与密码凭证、OTP 校验共用）。 */
+export const phoneRule = z.string().min(5).max(20);
+
 /** 邮箱 + 密码凭证。 */
 export const emailPasswordSchema = z.object({
 	email: z.email(),
@@ -11,7 +14,7 @@ export const emailPasswordSchema = z.object({
 
 /** 手机号 + 密码凭证。 */
 export const phonePasswordSchema = z.object({
-	phone: z.string().min(5).max(20),
+	phone: phoneRule,
 	password: passwordRule,
 });
 
@@ -40,7 +43,7 @@ export type PasswordCredentials = EmailPasswordCredentials;
 
 /** `POST /auth/verifications/phone-otp`：提交短信验证码（对应 Supabase `verifyOtp`）。 */
 export const phoneOtpVerificationSchema = z.object({
-	phone: z.string().min(5).max(20),
+	phone: phoneRule,
 	token: z.string().regex(/^\d{4,12}$/, "OTP must be 4–12 digits"),
 	type: z.enum(["sms", "phone_change"]).default("sms"),
 });
