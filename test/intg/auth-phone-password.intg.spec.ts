@@ -154,3 +154,80 @@ describe("POST /auth/sessions (phone + password)", () => {
 		expect(body.error.code).not.toBe("AUTH_PASSWORD_DISABLED");
 	});
 });
+
+describe("POST /auth/verifications/phone-otp", () => {
+	beforeEach(() => {
+		process.env.AUTH_PASSWORD_ENABLED = "true";
+		loadEnv();
+	});
+
+	afterEach(() => {
+		process.env.AUTH_PASSWORD_ENABLED = savedPasswordEnabled;
+		loadEnv();
+	});
+
+	test("returns 400 for short phone number", async () => {
+		const response = await app.request(
+			"http://localhost/auth/verifications/phone-otp",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					phone: "1234",
+					token: "123456",
+				}),
+			},
+		);
+		expect(response.status).toBe(400);
+	});
+
+	test("returns 400 for invalid OTP format", async () => {
+		const response = await app.request(
+			"http://localhost/auth/verifications/phone-otp",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					phone: "+8613800138000",
+					token: "12ab",
+				}),
+			},
+		);
+		expect(response.status).toBe(400);
+	});
+
+	test("returns 400 for missing token", async () => {
+		const response = await app.request(
+			"http://localhost/auth/verifications/phone-otp",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					phone: "+8613800138000",
+				}),
+			},
+		);
+		expect(response.status).toBe(400);
+	});
+
+	test("is NOT blocked when password auth is disabled (invalid OTP → 400/401, not 403)", async () => {
+		process.env.AUTH_PASSWORD_ENABLED = "false";
+		loadEnv();
+
+		const response = await app.request(
+			"http://localhost/auth/verifications/phone-otp",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					phone: "+8613800138000",
+					token: "123456",
+				}),
+			},
+		);
+		expect(response.status).not.toBe(403);
+		expect([400, 401]).toContain(response.status);
+		const body = (await response.json()) as { error: { code: string } };
+		expect(body.error.code).not.toBe("AUTH_PASSWORD_DISABLED");
+	});
+});

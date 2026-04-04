@@ -5,6 +5,7 @@ import {
 	passwordCredentialBodySchema,
 	passwordCredentialsSchema,
 	passwordRule,
+	phoneOtpVerificationSchema,
 	phonePasswordSchema,
 } from "./schemas.ts";
 
@@ -127,6 +128,53 @@ describe("phonePasswordSchema", () => {
 			phonePasswordSchema.parse({
 				phone: "13800138000",
 				password: "short",
+			}),
+		).toThrow();
+	});
+});
+
+describe("phoneOtpVerificationSchema", () => {
+	it("accepts phone + token and defaults type to sms", () => {
+		const result = phoneOtpVerificationSchema.parse({
+			phone: "+8613800138000",
+			token: "123456",
+		});
+		expect(result.phone).toBe("+8613800138000");
+		expect(result.token).toBe("123456");
+		expect(result.type).toBe("sms");
+	});
+
+	it("accepts explicit type phone_change", () => {
+		const result = phoneOtpVerificationSchema.parse({
+			phone: "+8613800138000",
+			token: "123456",
+			type: "phone_change",
+		});
+		expect(result.type).toBe("phone_change");
+	});
+
+	it("rejects token with non-digits", () => {
+		expect(() =>
+			phoneOtpVerificationSchema.parse({
+				phone: "+8613800138000",
+				token: "12ab56",
+			}),
+		).toThrow();
+	});
+
+	it("rejects token shorter than 4 digits", () => {
+		expect(() =>
+			phoneOtpVerificationSchema.parse({
+				phone: "+8613800138000",
+				token: "123",
+			}),
+		).toThrow();
+	});
+
+	it("rejects missing token", () => {
+		expect(() =>
+			phoneOtpVerificationSchema.parse({
+				phone: "+8613800138000",
 			}),
 		).toThrow();
 	});

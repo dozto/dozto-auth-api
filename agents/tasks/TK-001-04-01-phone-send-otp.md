@@ -17,6 +17,8 @@
 Implement the endpoint that sends a one-time password via SMS to the user's
 phone number. This is the first step of the phone OTP login flow.
 
+**关联**：`TK-001-04-02` 已实现 `POST /auth/verifications/phone-otp`；本 Task 完成后可补充「发码 → 校验」端到端集成测试。
+
 ## Scope Of Work
 
 - Add Zod schema for phone send-OTP request body (`{ phone }`)

@@ -1,5 +1,8 @@
 import type { Context, Env } from "hono";
-import type { PasswordCredentialBody } from "./schemas.ts";
+import type {
+	PasswordCredentialBody,
+	PhoneOtpVerificationInput,
+} from "./schemas.ts";
 import * as authService from "./service.ts";
 
 /** 与 `zValidator("json", passwordCredentialBodySchema)` 配套。 */
@@ -9,6 +12,15 @@ type PasswordCredentialJSONContext = Context<
 	{
 		in: { json: PasswordCredentialBody };
 		out: { json: PasswordCredentialBody };
+	}
+>;
+
+type PhoneOtpVerificationJSONContext = Context<
+	Env,
+	string,
+	{
+		in: { json: PhoneOtpVerificationInput };
+		out: { json: PhoneOtpVerificationInput };
 	}
 >;
 
@@ -31,5 +43,13 @@ export const signInWithPassword = async (
 		"email" in body
 			? await authService.passwordSignIn(body)
 			: await authService.phonePasswordSignIn(body);
+	return context.json(result, 200);
+};
+
+export const verifyPhoneOtpHandler = async (
+	context: PhoneOtpVerificationJSONContext,
+) => {
+	const body = context.req.valid("json");
+	const result = await authService.verifyPhoneOtp(body);
 	return context.json(result, 200);
 };

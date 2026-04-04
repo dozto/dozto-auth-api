@@ -4,7 +4,7 @@
 
 - Epic ID: `EP-001`
 - Title: Credential Login (Password & OTP)
-- Status: `planned`
+- Status: `in_progress`
 - Owner:
 - Created: 2026-04-04
 - Updated: 2026-04-04

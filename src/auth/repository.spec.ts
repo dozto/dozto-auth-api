@@ -6,6 +6,7 @@ import {
 	passwordSignUp,
 	phonePasswordSignIn,
 	phonePasswordSignUp,
+	verifyPhoneOtp,
 } from "./repository.ts";
 
 describe("auth repository – email password", () => {
@@ -130,6 +131,70 @@ describe("auth repository – phone password", () => {
 		expect(signInWithPassword).toHaveBeenCalledWith({
 			phone: "+8613800138000",
 			password: "password1",
+		});
+	});
+});
+
+describe("auth repository – phone OTP verification", () => {
+	test("verifyPhoneOtp delegates to supabase.auth.verifyOtp", async () => {
+		const verifyOtp = mock(() =>
+			Promise.resolve({
+				data: {
+					user: { id: "u3", phone: "+8613800138000" },
+					session: {
+						access_token: "at",
+						refresh_token: "rt",
+						expires_in: 3600,
+						token_type: "bearer",
+					},
+				},
+				error: null,
+			}),
+		);
+		const db = {
+			auth: { verifyOtp },
+		} as never;
+
+		await verifyPhoneOtp(
+			{
+				phone: "+8613800138000",
+				token: "123456",
+				type: "sms",
+			},
+			db,
+		);
+
+		expect(verifyOtp).toHaveBeenCalledWith({
+			phone: "+8613800138000",
+			token: "123456",
+			type: "sms",
+		});
+	});
+
+	test("verifyPhoneOtp passes phone_change type when provided", async () => {
+		const verifyOtp = mock(() =>
+			Promise.resolve({
+				data: { user: { id: "u3" }, session: null },
+				error: null,
+			}),
+		);
+		const db = {
+			auth: { verifyOtp },
+		} as never;
+
+		await verifyPhoneOtp(
+			{
+				phone: "+8613800138000",
+				token: "123456",
+				type: "phone_change",
+			},
+			db,
+		);
+
+		expect(verifyOtp).toHaveBeenCalledWith({
+			phone: "+8613800138000",
+			token: "123456",
+			type: "phone_change",
 		});
 	});
 });

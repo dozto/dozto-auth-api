@@ -92,6 +92,7 @@ src/
 | `/auth/*` | `auth/routes.ts`：`createAuthRouter()`，挂载前缀 `/auth` |
 | `POST /auth/users` | 密码凭证**注册**；JSON 为 `{ email, password }` 或 `{ phone, password }`（互斥，见 `passwordCredentialBodySchema`） |
 | `POST /auth/sessions` | 密码凭证**登录**（建立会话）；请求体形状同 `POST /auth/users` |
+| `POST /auth/verifications/phone-otp` | 手机短信 **OTP 校验**（`verifyOtp`）；JSON：`{ phone, token, type? }`，`type` 为 `sms`（默认）或 `phone_change` |
 | `/sse/*` | `sse/routes.ts`：`createSseRouter()`，挂载前缀 `/sse`（如 `GET /sse/stream`） |
 | `/webhooks/*` | `providers/sms/routes.ts` 等：第三方回调（如 Send SMS Hook） |
 

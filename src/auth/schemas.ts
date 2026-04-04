@@ -37,3 +37,14 @@ export type PasswordCredentialBody = z.infer<
 >;
 /** @deprecated 使用 EmailPasswordCredentials 替代。 */
 export type PasswordCredentials = EmailPasswordCredentials;
+
+/** `POST /auth/verifications/phone-otp`：提交短信验证码（对应 Supabase `verifyOtp`）。 */
+export const phoneOtpVerificationSchema = z.object({
+	phone: z.string().min(5).max(20),
+	token: z.string().regex(/^\d{4,12}$/, "OTP must be 4–12 digits"),
+	type: z.enum(["sms", "phone_change"]).default("sms"),
+});
+
+export type PhoneOtpVerificationInput = z.infer<
+	typeof phoneOtpVerificationSchema
+>;
