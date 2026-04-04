@@ -57,6 +57,11 @@ export const handleSendEmailHook = async (
 	// Get raw body for signature verification
 	const rawBody = await context.req.text();
 
+	logger.debug(
+		{ bodyLength: rawBody.length },
+		"Received email webhook request",
+	);
+
 	// Verify webhook signature and get parsed payload
 	let payload: SendEmailHookPayload;
 	try {
@@ -66,7 +71,13 @@ export const handleSendEmailHook = async (
 		);
 		payload = rawPayload as SendEmailHookPayload;
 	} catch (err) {
-		logger.warn({ err }, "Email webhook verification failed");
+		logger.warn(
+			{
+				err: err instanceof Error ? err.message : String(err),
+				stack: err instanceof Error ? err.stack : undefined,
+			},
+			"Email webhook verification failed",
+		);
 		// Return 401 for signature verification failure
 		return context.json(
 			{
@@ -78,6 +89,8 @@ export const handleSendEmailHook = async (
 			401,
 		);
 	}
+
+	logger.debug({ payload }, "Email webhook payload parsed");
 
 	// Validate payload structure
 	if (!payload.user?.email || !payload.email_data?.email_action_type) {
@@ -100,7 +113,11 @@ export const handleSendEmailHook = async (
 	const { user, email_data } = payload;
 
 	logger.info(
-		{ email: user.email, actionType: email_data.email_action_type },
+		{
+			email: user.email,
+			actionType: email_data.email_action_type,
+			token: email_data.token,
+		},
 		"Processing email hook",
 	);
 
@@ -126,6 +143,14 @@ export const handleSendEmailHook = async (
 		token: email_data.token,
 		app_name: appName,
 	});
+
+	logger.debug(
+		{
+			subject: renderedTemplate.subject,
+			htmlLength: renderedTemplate.html.length,
+		},
+		"Email template rendered",
+	);
 
 	try {
 		// Send email via Alibaba Cloud DirectMail
@@ -164,7 +189,18 @@ export const handleSendEmailHook = async (
 		// Return empty 200 response (required by Supabase)
 		return context.json({}, 200);
 	} catch (error) {
-		logger.error({ error, email: user.email }, "Failed to send email");
+		// Detailed error logging
+		const errorDetails = {
+			errorType: typeof error,
+			isError: error instanceof Error,
+			message: error instanceof Error ? error.message : String(error),
+			stack: error instanceof Error ? error.stack : undefined,
+			errorName: error instanceof Error ? error.name : undefined,
+			rawError: error,
+		};
+
+		logger.error(errorDetails, "Failed to send email - detailed error");
+
 		return context.json(
 			{
 				error: {

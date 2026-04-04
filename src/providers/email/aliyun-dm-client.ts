@@ -39,6 +39,16 @@ export const sendEmail = async (
 	const env = getEnv();
 	const logger = getLogger();
 
+	logger.info(
+		{
+			hasAccessKeyId: !!env.ALIYUN_ACCESS_KEY_ID,
+			hasAccessKeySecret: !!env.ALIYUN_ACCESS_KEY_SECRET,
+			hasAccountName: !!env.ALIYUN_DM_ACCOUNT_NAME,
+			region: env.ALIYUN_REGION,
+		},
+		"Aliyun DM environment check",
+	);
+
 	// Validate env vars
 	if (!env.ALIYUN_ACCESS_KEY_ID || !env.ALIYUN_ACCESS_KEY_SECRET) {
 		throw new Error(
@@ -57,6 +67,16 @@ export const sendEmail = async (
 	const region = env.ALIYUN_REGION || "cn-hangzhou";
 	const accountName = env.ALIYUN_DM_ACCOUNT_NAME;
 	const fromAlias = env.ALIYUN_DM_FROM_ALIAS;
+
+	logger.debug(
+		{
+			accessKeyId: accessKeyId.slice(0, 8) + "...",
+			accountName,
+			region,
+			hasFromAlias: !!fromAlias,
+		},
+		"Aliyun DM credentials prepared",
+	);
 
 	// Build request params
 	const params: Record<string, string> = {
@@ -88,6 +108,17 @@ export const sendEmail = async (
 	// Enable reply-to same sender address
 	params.ReplyToAddress = "true";
 
+	logger.debug(
+		{
+			toAddress: request.toAddress,
+			subject: request.subject,
+			hasHtml: !!request.htmlBody,
+			hasText: !!request.textBody,
+			paramKeys: Object.keys(params),
+		},
+		"Aliyun DM request params built",
+	);
+
 	// Sort and encode params
 	const sortedKeys = Object.keys(params).sort();
 	const canonicalQueryString = sortedKeys
@@ -96,46 +127,105 @@ export const sendEmail = async (
 		)
 		.join("&");
 
+	logger.debug({ sortedKeys }, "Aliyun DM params sorted");
+
 	// Build string to sign
 	const stringToSign = `POST&${encodeURIComponent("/")}&${encodeURIComponent(canonicalQueryString)}`;
 
+	logger.debug(
+		{ stringToSignPreview: stringToSign.slice(0, 100) + "..." },
+		"Aliyun DM string to sign",
+	);
+
 	// Calculate signature
-	const key = `${accessKeySecret}&`;
-	const signature = await calculateHmacSha1(key, stringToSign);
+	let signature: string;
+	try {
+		signature = await calculateHmacSha1(`${accessKeySecret}&`, stringToSign);
+		logger.debug(
+			{ signaturePreview: signature.slice(0, 20) + "..." },
+			"Aliyun DM signature calculated",
+		);
+	} catch (err) {
+		logger.error({ err }, "Failed to calculate HMAC signature");
+		throw new Error(
+			`HMAC calculation failed: ${err instanceof Error ? err.message : String(err)}`,
+		);
+	}
 
 	// Build final request
 	const finalUrl = `https://dm.aliyuncs.com/?Signature=${encodeURIComponent(signature)}&${canonicalQueryString}`;
 
-	logger.debug(
-		{ to: request.toAddress, subject: request.subject },
+	logger.info(
+		{
+			to: request.toAddress,
+			subject: request.subject,
+			urlPreview: finalUrl.slice(0, 80) + "...",
+		},
 		"Sending email via Aliyun DirectMail",
 	);
 
 	// Send request
-	const response = await fetch(finalUrl, {
-		method: "POST",
-		headers: { "Content-Type": "application/x-www-form-urlencoded" },
-	});
+	let response: Response;
+	try {
+		response = await fetch(finalUrl, {
+			method: "POST",
+			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+		});
+	} catch (err) {
+		logger.error(
+			{
+				err,
+				errorType: typeof err,
+				errorMessage: err instanceof Error ? err.message : String(err),
+			},
+			"Fetch failed",
+		);
+		throw new Error(
+			`HTTP request failed: ${err instanceof Error ? err.message : String(err)}`,
+		);
+	}
+
+	logger.debug(
+		{ status: response.status, statusText: response.statusText },
+		"Aliyun DM HTTP response received",
+	);
 
 	if (!response.ok) {
 		const errorText = await response.text();
 		logger.error(
-			{ status: response.status, body: errorText },
+			{
+				status: response.status,
+				statusText: response.statusText,
+				body: errorText,
+			},
 			"Aliyun DirectMail API error",
 		);
 		throw new Error(
-			`Aliyun DirectMail API error: ${response.status} - ${errorText}`,
+			`Aliyun DirectMail API error: ${response.status} ${response.statusText} - ${errorText}`,
 		);
 	}
 
-	const result = (await response.json()) as {
-		Code: string;
-		Message: string;
-		RequestId: string;
-	};
+	const resultText = await response.text();
+	logger.debug(
+		{ responseText: resultText.slice(0, 200) },
+		"Aliyun DM raw response",
+	);
+
+	let result: { Code: string; Message: string; RequestId: string };
+	try {
+		result = JSON.parse(resultText);
+	} catch (err) {
+		logger.error({ resultText, err }, "Failed to parse JSON response");
+		throw new Error(`Invalid JSON response: ${resultText}`);
+	}
 
 	logger.info(
-		{ requestId: result.RequestId, code: result.Code, to: request.toAddress },
+		{
+			requestId: result.RequestId,
+			code: result.Code,
+			to: request.toAddress,
+			message: result.Message,
+		},
 		"Aliyun DirectMail response received",
 	);
 
