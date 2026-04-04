@@ -6,7 +6,9 @@ import { getEnv } from "./lib/env/index.ts";
 import { isAppError } from "./lib/errors/index.ts";
 import { buildHealthResponse } from "./lib/health/index.ts";
 import { getLogger } from "./lib/logger/index.ts";
+import { handleSendEmailHook } from "./providers/email/index.ts";
 import { createSmsRouter, smsRouterBoundary } from "./providers/sms/index.ts";
+import { handleEmailVerification } from "./routes/verify.ts";
 import { createSseRouter, sseRouterBoundary } from "./sse/routes.ts";
 
 /**
@@ -34,6 +36,10 @@ app.onError((err, context) => {
 app.route(authRouterBoundary.mountPath, createAuthRouter());
 app.route(sseRouterBoundary.mountPath, createSseRouter());
 app.route(smsRouterBoundary.mountPath, createSmsRouter());
+
+// Email webhook routes
+app.post("/webhooks/email/send", handleSendEmailHook);
+app.get("/verify", handleEmailVerification);
 
 app.get("/health", (context) =>
 	context.json(buildHealthResponse(getEnv().SERVICE_NAME)),

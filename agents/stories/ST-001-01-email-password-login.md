@@ -27,6 +27,7 @@ test coverage aligned with the new architecture.
 
 - Review and align existing `POST /auth/password/sign-up` and `POST /auth/password/sign-in` with unified session response shape
 - Ensure `AUTH_PASSWORD_ENABLED` toggle: when disabled, sign-up returns rejection; sign-in for existing users still works
+- Implement Send Email Hook with Alibaba Cloud DirectMail for email verification
 - Update Zod schemas if needed
 - Unit and integration tests
 
@@ -36,6 +37,7 @@ test coverage aligned with the new architecture.
 - `AC-02` `POST /auth/password/sign-in` with correct credentials returns access_token + refresh_token.
 - `AC-03` When `AUTH_PASSWORD_ENABLED` is not `"true"`, sign-up returns 403; sign-in for an existing user still succeeds.
 - `AC-04` Invalid input (missing email, short password) returns 400 with structured error.
+- `AC-05` Email verification email is sent via Alibaba Cloud DirectMail after registration, with Chinese template.
 
 ## Linked Tasks
 
@@ -43,6 +45,7 @@ test coverage aligned with the new architecture.
 - `TK-001-01-02` Align email password sign-up with unified session response
 - `TK-001-01-03` Align email password sign-in with unified session response
 - `TK-001-01-04` Password registration toggle for email sign-up
+- `TK-001-01-05` Supabase Send Email Hook + 阿里云邮件推送
 
 ## Notes
 

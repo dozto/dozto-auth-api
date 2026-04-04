@@ -48,6 +48,14 @@ export const envSchema = z
 		/** 阿里云短信模板代码 */
 		ALIYUN_SMS_TEMPLATE_CODE: z.string().optional(),
 
+		/** ========== Email / 邮件配置 ========== */
+		/** Auth 服务域名（用于生成邮件确认链接） */
+		AUTH_SERVICE_DOMAIN: z.string().optional(),
+		/** 阿里云邮件推送发信地址 */
+		ALIYUN_DM_ACCOUNT_NAME: z.string().optional(),
+		/** 阿里云邮件推送发信人昵称 */
+		ALIYUN_DM_FROM_ALIAS: z.string().optional(),
+
 		/** ========== Supabase Auth Hooks ========== */
 		/** Supabase Webhook 签名密钥（用于验证 Send SMS Hook） */
 		SUPABASE_WEBHOOK_SECRET: z.string().optional(),
