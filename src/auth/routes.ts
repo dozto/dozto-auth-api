@@ -20,12 +20,13 @@ export const authRouterBoundary = {
  * 认证域子路由（相对路径）。
  * - `POST /users`：密码凭证注册（请求体为邮箱或手机号 + 密码）
  * - `POST /sessions`：密码凭证登录（建立会话）
- * - `POST /verifications/phone-otp`：手机短信 OTP 校验（`verifyOtp`）
+ * - `POST /verifications/phone-otp`：手机号短信验证码校验（用于密码注册确认）
  * 完整 URL 前缀由根路由挂载为 `/auth`。
  */
 export const createAuthRouter = () => {
 	const router = new Hono();
 
+	// Password-based authentication
 	router.post(
 		"/users",
 		zValidator("json", passwordCredentialBodySchema),
@@ -36,6 +37,8 @@ export const createAuthRouter = () => {
 		zValidator("json", passwordCredentialBodySchema),
 		controller.signInWithPassword,
 	);
+
+	// Phone OTP verification (for password registration confirmation)
 	router.post(
 		"/verifications/phone-otp",
 		zValidator("json", phoneOtpVerificationSchema),

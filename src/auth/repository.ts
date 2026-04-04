@@ -80,7 +80,7 @@ export const phonePasswordSignIn = async (
 		db,
 	);
 
-/** 手机号短信 OTP 校验（注册确认、纯 OTP 登录、换绑手机等，由 `type` 区分）。 */
+/** 手机号短信 OTP 校验（注册确认、换绑手机等场景）。 */
 export const verifyPhoneOtp = async (
 	input: PhoneOtpVerificationInput,
 	db: SupabaseClient = getSupabase(),

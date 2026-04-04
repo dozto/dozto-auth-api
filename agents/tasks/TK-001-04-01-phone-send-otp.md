@@ -6,43 +6,19 @@
 - Story ID: `ST-001-04`
 - Epic ID: `EP-001`
 - Title: Phone send-OTP endpoint
-- Status: `planned`
+- Status: `cancelled`
 - Owner:
 - Created: 2026-04-04
-- Updated: 2026-04-04
+- Updated: 2026-04-05
 - Depends on: —
 
 ## Summary
 
-Implement the endpoint that sends a one-time password via SMS to the user's
-phone number. This is the first step of the phone OTP login flow.
+~~Implement the endpoint that sends a one-time password via SMS to the user's
+phone number. This is the first step of the phone OTP login flow.~~
 
-**关联**：`TK-001-04-02` 已实现 `POST /auth/verifications/phone-otp`；本 Task 完成后可补充「发码 → 校验」端到端集成测试。
+**状态**: 已取消。Story ST-001-04 已放弃纯 OTP 登录，仅保留密码登录及密码注册时的短信验证。
 
-## Scope Of Work
+## Change Log
 
-- Add Zod schema for phone send-OTP request body (`{ phone }`)
-- Add `phoneSendOtp` to `auth/repository.ts` calling `db.auth.signInWithOtp({ phone })`
-- Add `phoneSendOtp` to `auth/service.ts`
-- Add controller handler
-- Register route (e.g. `POST /auth/otp/phone/send`)
-- Return 200 acknowledgement
-- Map Supabase errors via `mapAuthError`
-
-## Acceptance Criteria Coverage
-
-| Story AC | How this task supports it |
-| --- | --- |
-| `AC-01` | Send-OTP accepts valid phone and returns 200 acknowledgement |
-| `AC-05` | Invalid input (missing/malformed phone) returns 400 |
-
-## Test Plan
-
-- **Unit test** (`src/auth/service.spec.ts`): send-OTP calls repository with correct phone
-- **Unit test** (`src/auth/repository.spec.ts`): send-OTP calls Supabase `signInWithOtp({ phone })`
-- **Integration test** (`test/intg/auth-phone-otp.intg.spec.ts`): POST with valid phone → 200; POST with invalid phone → 400
-
-## Done When
-
-- Phone send-OTP endpoint returns acknowledgement.
-- Unit and integration tests pass.
+- 2026-04-05: Task cancelled. Pure phone OTP login feature abandoned. Password-based login with SMS verification for registration remains supported.
