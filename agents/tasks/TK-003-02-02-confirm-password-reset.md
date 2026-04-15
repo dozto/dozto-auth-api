@@ -6,10 +6,10 @@
 - Story ID: `ST-003-02`
 - Epic ID: `EP-003`
 - Title: Confirm password reset endpoint
-- Status: `planned`
+- Status: `cancelled`
 - Owner:
 - Created: 2026-04-04
-- Updated: 2026-04-04
+- Updated: 2026-04-15
 - Depends on: `TK-003-02-01`
 
 ## Summary

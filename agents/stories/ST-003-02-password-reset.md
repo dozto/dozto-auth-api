@@ -5,10 +5,10 @@
 - Story ID: `ST-003-02`
 - Epic ID: `EP-003`
 - Title: Password Reset (Email-based)
-- Status: `planned`
+- Status: `cancelled`
 - Owner:
 - Created: 2026-04-04
-- Updated: 2026-04-04
+- Updated: 2026-04-15
 
 ## Summary
 

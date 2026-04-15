@@ -6,10 +6,10 @@
 - Story ID: `ST-003-01`
 - Epic ID: `EP-003`
 - Title: Set password protected endpoint
-- Status: `planned`
+- Status: `cancelled`
 - Owner:
 - Created: 2026-04-04
-- Updated: 2026-04-04
+- Updated: 2026-04-15
 - Depends on: `TK-002-01-01` (auth middleware)
 
 ## Summary

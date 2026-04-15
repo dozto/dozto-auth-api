@@ -4,10 +4,10 @@
 
 - Epic ID: `EP-003`
 - Title: Password Management
-- Status: `planned`
+- Status: `cancelled`
 - Owner:
 - Created: 2026-04-04
-- Updated: 2026-04-04
+- Updated: 2026-04-15
 - Related Requirement: `REQUIREMENTS.md` §5
 - Related Architecture: `ARCHITECTURE.md` §3, §4
 
