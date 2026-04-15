@@ -52,6 +52,12 @@ export const mapSessionResponse = (options: {
 	};
 };
 
+export const mapUserResponse = (user: User) => ({
+	id: user.id,
+	email: user.email ?? null,
+	phone: user.phone ?? null,
+});
+
 /** 校验 redirect URL 以防止 Open Redirect 攻击。 */
 export const isValidRedirectUrl = (url: string): boolean => {
 	try {

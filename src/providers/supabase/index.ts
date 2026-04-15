@@ -3,10 +3,13 @@
  */
 
 export {
+	getUserByAccessToken,
 	passwordSignIn,
 	passwordSignUp,
 	phonePasswordSignIn,
 	phonePasswordSignUp,
+	refreshSession,
+	signOut,
 	verifyEmailToken,
 	verifyPhoneOtp,
 } from "./supabase.auth.ts";

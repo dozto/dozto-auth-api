@@ -1,4 +1,4 @@
-import type { AuthError, SupabaseClient } from "@supabase/supabase-js";
+import type { AuthError, SupabaseClient, User } from "@supabase/supabase-js";
 
 import { mapAuthError } from "../../auth/auth.helper.ts";
 import type {
@@ -108,3 +108,34 @@ export const verifyEmailToken = async (
 			}),
 		db,
 	);
+
+/** Validate access token and return the authenticated user. */
+export const getUserByAccessToken = async (
+	accessToken: string,
+	db: SupabaseClient = getSupabase(),
+): Promise<{ user: User | null }> =>
+	execAuth((client) => client.auth.getUser(accessToken), db) as Promise<{
+		user: User | null;
+	}>;
+
+/** Refresh session using refresh token. */
+export const refreshSession = async (
+	refreshToken: string,
+	db: SupabaseClient = getSupabase(),
+) =>
+	execAuth(
+		(client) => client.auth.refreshSession({ refresh_token: refreshToken }),
+		db,
+	);
+
+/** Revoke current session using access token (local scope). */
+export const signOut = async (
+	accessToken: string,
+	db: SupabaseClient = getSupabase(),
+): Promise<null> => {
+	const { data, error } = await db.auth.admin.signOut(accessToken, "local");
+	if (error) {
+		mapAuthError(error);
+	}
+	return data;
+};

@@ -1,16 +1,23 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
-
+import {
+	type AuthenticatedContext,
+	getAuthAccessToken,
+	getAuthUser,
+	requireAuth,
+} from "./auth.middleware.ts";
 import {
 	emailVerificationSchema,
 	passwordCredentialBodySchema,
 	phoneOtpVerificationSchema,
+	sessionRefreshSchema,
 } from "./auth.schemas.ts";
 import * as authService from "./auth.service.ts";
 import type {
 	EmailVerificationQueryContext,
 	PasswordCredentialJSONContext,
 	PhoneOtpVerificationJSONContext,
+	SessionRefreshJSONContext,
 } from "./auth.types.ts";
 
 /** 对外挂载路径（由 `src/hono.ts` 使用 `app.route(mountPath, …)` 挂载）。 */
@@ -44,10 +51,17 @@ export const createAuthRouter = () => {
 		signInWithPassword,
 	);
 	router.post(
+		"/sessions/refresh",
+		zValidator("json", sessionRefreshSchema),
+		refreshSessionHandler,
+	);
+	router.post("/sessions/logout", requireAuth, logoutHandler);
+	router.post(
 		"/verifications/phone-otp",
 		zValidator("json", phoneOtpVerificationSchema),
 		verifyPhoneOtpHandler,
 	);
+	router.get("/me", requireAuth, getCurrentUserHandler);
 	router.get(
 		"/verifications/email-token",
 		zValidator("query", emailVerificationSchema),
@@ -75,12 +89,33 @@ const signInWithPassword = async (context: PasswordCredentialJSONContext) => {
 	return context.json(result, 200);
 };
 
+/** POST /auth/sessions/refresh — refresh access token using refresh token */
+const refreshSessionHandler = async (context: SessionRefreshJSONContext) => {
+	const body = context.req.valid("json");
+	const result = await authService.refreshSession(body);
+	return context.json(result, 200);
+};
+
 /** POST /auth/verifications/phone-otp — 手机号短信验证码校验 */
 const verifyPhoneOtpHandler = async (
 	context: PhoneOtpVerificationJSONContext,
 ) => {
 	const body = context.req.valid("json");
 	const result = await authService.verifyPhoneOtp(body);
+	return context.json(result, 200);
+};
+
+/** POST /auth/sessions/logout — revoke current session */
+const logoutHandler = async (context: AuthenticatedContext) => {
+	const token = getAuthAccessToken(context);
+	const result = await authService.signOut(token);
+	return context.json(result, 200);
+};
+
+/** GET /auth/me — current user identity */
+const getCurrentUserHandler = async (context: AuthenticatedContext) => {
+	const user = getAuthUser(context);
+	const result = await authService.getCurrentUser(user);
 	return context.json(result, 200);
 };
 

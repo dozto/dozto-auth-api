@@ -4,6 +4,7 @@ import type {
 	EmailVerificationInput,
 	PasswordCredentialBody,
 	PhoneOtpVerificationInput,
+	SessionRefreshInput,
 } from "./auth.schemas.ts";
 
 /** 与 `zValidator("json", passwordCredentialBodySchema)` 配套。 */
@@ -31,5 +32,14 @@ export type EmailVerificationQueryContext = Context<
 	{
 		in: { query: EmailVerificationInput };
 		out: { query: EmailVerificationInput };
+	}
+>;
+
+export type SessionRefreshJSONContext = Context<
+	Env,
+	string,
+	{
+		in: { json: SessionRefreshInput };
+		out: { json: SessionRefreshInput };
 	}
 >;

@@ -10,6 +10,7 @@ import {
 	isValidRedirectUrl,
 	mapAuthError,
 	mapSessionResponse,
+	mapUserResponse,
 } from "./auth.helper.ts";
 
 const savedPasswordEnabled = process.env.AUTH_PASSWORD_ENABLED;
@@ -139,5 +140,22 @@ describe("mapSessionResponse", () => {
 		const result = mapSessionResponse({ session: null, user: null });
 		expect(result.session).toBeNull();
 		expect(result.user).toBeNull();
+	});
+});
+
+describe("mapUserResponse", () => {
+	test("maps only safe identity fields", () => {
+		const result = mapUserResponse({
+			id: "u1",
+			email: "a@b.co",
+			phone: "+8613800138000",
+			user_metadata: { secret: "nope" },
+			app_metadata: { provider: "phone" },
+		} as never);
+		expect(result).toEqual({
+			id: "u1",
+			email: "a@b.co",
+			phone: "+8613800138000",
+		});
 	});
 });

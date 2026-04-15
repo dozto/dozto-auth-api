@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getEnv } from "../../lib/env/index.ts";
 
 let instance: SupabaseClient | undefined;
+let testInstance: SupabaseClient | undefined;
 
 const TEST_OUTBOUND_FETCH_MS = 3_500;
 
@@ -39,19 +40,39 @@ const fetchWithTestTimeout = (
  * 首次调用时才读 env 并创建；避免模块加载时就要求 `loadEnv()` 已执行。
  */
 export const getSupabase = (): SupabaseClient => {
+	const env = getEnv();
+	// In tests, use a cached test instance to avoid creating new instances repeatedly
+	if (env.NODE_ENV === "test") {
+		if (!testInstance) {
+			testInstance = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+				auth: {
+					persistSession: false,
+					autoRefreshToken: false,
+				},
+				global: { fetch: fetchWithTestTimeout },
+			});
+		}
+		return testInstance;
+	}
+
 	if (!instance) {
-		const env = getEnv();
 		instance = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
 			auth: {
 				persistSession: false,
 				autoRefreshToken: false,
 			},
-			...(env.NODE_ENV === "test"
-				? { global: { fetch: fetchWithTestTimeout } }
-				: {}),
 		});
 	}
 	return instance;
+};
+
+/**
+ * 清理测试实例缓存（仅测试环境使用）
+ */
+export const clearTestSupabaseInstance = () => {
+	if (process.env.NODE_ENV === "test") {
+		testInstance = undefined;
+	}
 };
 
 /**

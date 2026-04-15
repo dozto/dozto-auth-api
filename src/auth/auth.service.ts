@@ -1,15 +1,18 @@
+import type { User } from "@supabase/supabase-js";
 import * as provider from "../providers/supabase/index.ts";
 import {
 	assertPasswordEnabled,
 	assertSupportedVerificationType,
 	isValidRedirectUrl,
 	mapSessionResponse,
+	mapUserResponse,
 } from "./auth.helper.ts";
 import type {
 	EmailPasswordCredentials,
 	EmailVerificationInput,
 	PhoneOtpVerificationInput,
 	PhonePasswordCredentials,
+	SessionRefreshInput,
 } from "./auth.schemas.ts";
 
 export const passwordSignUp = async (input: EmailPasswordCredentials) => {
@@ -56,3 +59,17 @@ export const verifyEmail = async (input: EmailVerificationInput) => {
 				: null,
 	};
 };
+
+export const refreshSession = async (input: SessionRefreshInput) => {
+	const data = await provider.refreshSession(input.refreshToken);
+	return mapSessionResponse({ session: data.session, user: data.user });
+};
+
+export const signOut = async (accessToken: string) => {
+	await provider.signOut(accessToken);
+	return { success: true };
+};
+
+export const getCurrentUser = async (user: User) => ({
+	user: mapUserResponse(user),
+});

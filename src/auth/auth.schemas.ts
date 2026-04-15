@@ -52,3 +52,10 @@ export const emailVerificationSchema = z.object({
 });
 
 export type EmailVerificationInput = z.infer<typeof emailVerificationSchema>;
+
+/** `POST /auth/sessions/refresh`：使用 refresh token 刷新 session（对应 Supabase `refreshSession`）。 */
+export const sessionRefreshSchema = z.object({
+	refreshToken: z.string().min(1),
+});
+
+export type SessionRefreshInput = z.infer<typeof sessionRefreshSchema>;
