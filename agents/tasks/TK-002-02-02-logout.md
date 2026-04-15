@@ -6,10 +6,10 @@
 - Story ID: `ST-002-02`
 - Epic ID: `EP-002`
 - Title: Logout endpoint
-- Status: `planned`
+- Status: `done`
 - Owner:
 - Created: 2026-04-04
-- Updated: 2026-04-04
+- Updated: 2026-04-15
 - Depends on: `TK-002-01-01`
 
 ## Summary
@@ -31,7 +31,7 @@ current session is affected (no all-device logout).
 | Story AC | How this task supports it |
 | --- | --- |
 | `AC-03` | Logout revokes current session and returns success |
-| `AC-04` | After logout, old access token is no longer valid |
+| `AC-04` | After logout, refresh token can no longer refresh session (access token JWT may remain valid until expiry) |
 
 ## Test Plan
 

@@ -6,10 +6,10 @@
 - Story ID: `ST-002-02`
 - Epic ID: `EP-002`
 - Title: Token refresh endpoint
-- Status: `planned`
+- Status: `done`
 - Owner:
 - Created: 2026-04-04
-- Updated: 2026-04-04
+- Updated: 2026-04-15
 - Depends on: —
 
 ## Summary

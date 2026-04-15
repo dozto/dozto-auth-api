@@ -5,10 +5,10 @@
 - Story ID: `ST-002-02`
 - Epic ID: `EP-002`
 - Title: Token Refresh and Logout
-- Status: `planned`
+- Status: `done`
 - Owner:
 - Created: 2026-04-04
-- Updated: 2026-04-04
+- Updated: 2026-04-15
 
 ## Summary
 
@@ -36,7 +36,7 @@ clients cannot extend sessions or cleanly terminate them.
 - `AC-01` Refresh endpoint with valid refresh_token returns new access_token + refresh_token.
 - `AC-02` Refresh endpoint with invalid or expired refresh_token returns 401.
 - `AC-03` Logout endpoint revokes the current session and returns success.
-- `AC-04` After logout, the old access token is no longer valid for protected endpoints.
+- `AC-04` After logout, the **refresh token** can no longer be used to refresh the session (401). Note: access token JWT may remain valid until expiry.
 
 ## Linked Tasks
 

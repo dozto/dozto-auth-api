@@ -6,10 +6,10 @@
 - Story ID: `ST-002-01`
 - Epic ID: `EP-002`
 - Title: Auth middleware error handling
-- Status: `planned`
+- Status: `done`
 - Owner:
 - Created: 2026-04-04
-- Updated: 2026-04-04
+- Updated: 2026-04-15
 - Depends on: `TK-002-01-01`
 
 ## Summary

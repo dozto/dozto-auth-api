@@ -4,7 +4,6 @@ import { createClient } from "@supabase/supabase-js";
 import { getEnv } from "../../lib/env/index.ts";
 
 let instance: SupabaseClient | undefined;
-let testInstance: SupabaseClient | undefined;
 
 const TEST_OUTBOUND_FETCH_MS = 3_500;
 
@@ -41,18 +40,15 @@ const fetchWithTestTimeout = (
  */
 export const getSupabase = (): SupabaseClient => {
 	const env = getEnv();
-	// In tests, use a cached test instance to avoid creating new instances repeatedly
+	// In tests, avoid cross-test auth state bleeding through a singleton client.
 	if (env.NODE_ENV === "test") {
-		if (!testInstance) {
-			testInstance = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
-				auth: {
-					persistSession: false,
-					autoRefreshToken: false,
-				},
-				global: { fetch: fetchWithTestTimeout },
-			});
-		}
-		return testInstance;
+		return createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+			auth: {
+				persistSession: false,
+				autoRefreshToken: false,
+			},
+			global: { fetch: fetchWithTestTimeout },
+		});
 	}
 
 	if (!instance) {
@@ -64,15 +60,6 @@ export const getSupabase = (): SupabaseClient => {
 		});
 	}
 	return instance;
-};
-
-/**
- * 清理测试实例缓存（仅测试环境使用）
- */
-export const clearTestSupabaseInstance = () => {
-	if (process.env.NODE_ENV === "test") {
-		testInstance = undefined;
-	}
 };
 
 /**

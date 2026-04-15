@@ -4,10 +4,10 @@
 
 - Epic ID: `EP-002`
 - Title: Session Management & Auth Middleware
-- Status: `planned`
+- Status: `done`
 - Owner:
 - Created: 2026-04-04
-- Updated: 2026-04-04
+- Updated: 2026-04-15
 - Related Requirement: `REQUIREMENTS.md` §6
 - Related Architecture: `ARCHITECTURE.md` §3, §4
 

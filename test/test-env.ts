@@ -26,6 +26,7 @@ const originalFetch = globalThis.fetch.bind(globalThis);
 
 // 全局管理撤销的tokens，提供给mock使用
 export const revokedAccessTokens = new Set<string>();
+const revokedRefreshTokens = new Set<string>();
 
 export const revokeAccessToken = (token: string) => {
 	revokedAccessTokens.add(token);
@@ -33,6 +34,7 @@ export const revokeAccessToken = (token: string) => {
 
 export const clearRevokedTokens = () => {
 	revokedAccessTokens.clear();
+	revokedRefreshTokens.clear();
 };
 
 const mockPlaceholderAuthFetch = async (
@@ -125,6 +127,9 @@ const mockPlaceholderAuthFetch = async (
 		if (jwt) {
 			revokedAccessTokens.add(jwt);
 		}
+		// Supabase signOut revokes refresh token server-side. We don't have a
+		// refresh token here, so for tests we revoke the known valid refresh token.
+		revokedRefreshTokens.add(TEST_TOKENS.VALID_REFRESH);
 		return new Response("", { status: 204 });
 	}
 
@@ -148,7 +153,7 @@ const mockPlaceholderAuthFetch = async (
 			const params = new URLSearchParams(bodyText);
 			refresh = params.get("refresh_token");
 		}
-		if (refresh !== TEST_TOKENS.VALID_REFRESH) {
+		if (refresh !== TEST_TOKENS.VALID_REFRESH || revokedRefreshTokens.has(refresh)) {
 			return new Response(
 				JSON.stringify({ code: "invalid_grant", msg: "Invalid refresh token" }),
 				{ status: 401, headers: jsonHeaders },

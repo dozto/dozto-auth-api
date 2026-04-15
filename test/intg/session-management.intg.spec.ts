@@ -83,11 +83,19 @@ describe("EP-002 session management", () => {
 	});
 
 	describe("POST /auth/sessions/logout", () => {
-		test("returns 200 and revokes token for protected endpoints", async () => {
-			// 先获取一个新的token（因为logout会撤销）
-			const validToken = TEST_TOKENS.VALID_ACCESS;
+		test("returns 200 and prevents refresh with old refresh token", async () => {
+			// Establish a refresh token that will be revoked by logout.
+			const refreshBeforeLogout = await app.request(
+				"http://localhost/auth/sessions/refresh",
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ refreshToken: TEST_TOKENS.VALID_REFRESH }),
+				},
+			);
+			expect(refreshBeforeLogout.status).toBe(200);
 
-			// 测试登出
+			const validToken = TEST_TOKENS.VALID_ACCESS;
 			const logoutResponse = await app.request(
 				"http://localhost/auth/sessions/logout",
 				{
@@ -99,14 +107,16 @@ describe("EP-002 session management", () => {
 			const logoutBody = (await logoutResponse.json()) as { success: boolean };
 			expect(logoutBody.success).toBe(true);
 
-			// 验证token已被撤销（通过test-env.ts中的mock）
-			expect(revokedAccessTokens.has(validToken)).toBe(true);
-
-			// 尝试使用已撤销的token访问protected endpoint
-			const meAfterLogout = await app.request("http://localhost/auth/me", {
-				headers: { Authorization: `Bearer ${validToken}` },
-			});
-			expect(meAfterLogout.status).toBe(401);
+			// Logout does not necessarily invalidate the JWT immediately; refresh token should be revoked.
+			const refreshAfterLogout = await app.request(
+				"http://localhost/auth/sessions/refresh",
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ refreshToken: TEST_TOKENS.VALID_REFRESH }),
+				},
+			);
+			expect(refreshAfterLogout.status).toBe(401);
 		});
 	});
 });

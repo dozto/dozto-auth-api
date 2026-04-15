@@ -6,10 +6,10 @@
 - Story ID: `ST-002-01`
 - Epic ID: `EP-002`
 - Title: Auth middleware implementation and typed context
-- Status: `planned`
+- Status: `done`
 - Owner:
 - Created: 2026-04-04
-- Updated: 2026-04-04
+- Updated: 2026-04-15
 - Depends on: —
 
 ## Summary
