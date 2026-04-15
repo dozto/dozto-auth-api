@@ -8,6 +8,11 @@ process.env.LOG_LEVEL ??= "silent";
 process.env.SUPABASE_URL ??= "https://placeholder.supabase.co";
 process.env.SUPABASE_ANON_KEY ??= "placeholder-anon-key";
 
+// 测试默认应不依赖本机 `.env`；显式清空可能影响集成测试预期的开关/密钥。
+// 需要在具体用例里再按需设置并调用 `loadEnv()` 刷新。
+delete process.env.SMS_ENABLED;
+delete process.env.SUPABASE_WEBHOOK_SECRET;
+
 loadEnv();
 initLogger();
 
@@ -19,7 +24,10 @@ initLogger();
 const supabaseOrigin = new URL(getEnv().SUPABASE_URL).origin;
 const originalFetch = globalThis.fetch.bind(globalThis);
 
-const mockPlaceholderAuthFetch: typeof fetch = async (input, init) => {
+const mockPlaceholderAuthFetch = async (
+	input: Parameters<typeof fetch>[0],
+	init?: Parameters<typeof fetch>[1],
+): ReturnType<typeof fetch> => {
 	const url =
 		typeof input === "string"
 			? input
@@ -30,14 +38,14 @@ const mockPlaceholderAuthFetch: typeof fetch = async (input, init) => {
 	try {
 		parsed = new URL(url);
 	} catch {
-		return originalFetch(input as RequestInfo, init);
+		return originalFetch(input, init);
 	}
 
 	if (
 		parsed.origin !== supabaseOrigin ||
 		!parsed.pathname.startsWith("/auth/v1/")
 	) {
-		return originalFetch(input as RequestInfo, init);
+		return originalFetch(input, init);
 	}
 
 	const jsonHeaders = { "Content-Type": "application/json" };
@@ -78,7 +86,10 @@ const mockPlaceholderAuthFetch: typeof fetch = async (input, init) => {
 		);
 	}
 
-	return originalFetch(input as RequestInfo, init);
+	return originalFetch(
+		input as Parameters<typeof fetch>[0],
+		init as Parameters<typeof fetch>[1],
+	);
 };
 
 if (
