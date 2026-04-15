@@ -2,6 +2,7 @@ import type { AuthError, Session, User } from "@supabase/supabase-js";
 
 import { env } from "../lib/env/index.ts";
 import { createAppError } from "../lib/errors/index.ts";
+import { logger } from "../lib/logger/index.ts";
 
 /** 校验密码功能是否开启；未开启则抛 403。 */
 export const assertPasswordEnabled = (): void => {
@@ -49,4 +50,33 @@ export const mapSessionResponse = (options: {
 				}
 			: null,
 	};
+};
+
+/** 校验 redirect URL 以防止 Open Redirect 攻击。 */
+export const isValidRedirectUrl = (url: string): boolean => {
+	try {
+		const parsedUrl = new URL(url);
+		const allowedDomains = [env.AUTH_SERVICE_DOMAIN].filter(Boolean);
+		const urlOrigin = `${parsedUrl.protocol}//${parsedUrl.host}`;
+		return allowedDomains.some((domain) => {
+			if (!domain) return false;
+			return (
+				urlOrigin === domain || urlOrigin.endsWith(`.${new URL(domain).host}`)
+			);
+		});
+	} catch {
+		return false;
+	}
+};
+
+/** 校验邮箱确认请求的 type 是否在支持范围内。 */
+export const assertSupportedVerificationType = (type: string): void => {
+	if (type !== "signup") {
+		logger.warn({ type }, "Unsupported verification type");
+		throw createAppError({
+			code: "UNSUPPORTED_TYPE",
+			message: `Verification type '${type}' is not supported`,
+			statusCode: 400,
+		});
+	}
 };

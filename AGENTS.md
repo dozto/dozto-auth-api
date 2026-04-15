@@ -9,6 +9,7 @@ Primary guidance for agents working in this repository.
 
 ## Project source of truth
 
+- Always follow the rules in `agents/RULES.md`.
 - Project requirements, architecture, roadmap, epic/story/task planning, and agent workflow definitions must follow the files under `agents/`.
 - Use `agents/AGENTS.md` as the entry point for project-specific agent behavior.
 - Use `agents/REQUIREMENTS.md`, `agents/ARCHITECTURE.md`, and `agents/ROADMAP.md` as the source of truth for project definition and execution state.

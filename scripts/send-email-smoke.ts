@@ -23,7 +23,7 @@ console.log(
 	`  ALIYUN_ACCESS_KEY_ID: ${env.ALIYUN_ACCESS_KEY_ID ? "✅ 已设置" : "❌ 未设置"}`,
 );
 console.log(
-	`  ALIYUN_ACCESS_KEY_SECRET: ${env.ALIYUN_ACCESS_KEY_SECRET ? "✅ 已设置 (长度: " + env.ALIYUN_ACCESS_KEY_SECRET.length + ")" : "❌ 未设置"}`,
+	`  ALIYUN_ACCESS_KEY_SECRET: ${env.ALIYUN_ACCESS_KEY_SECRET ? `✅ 已设置 (长度: ${env.ALIYUN_ACCESS_KEY_SECRET.length})` : "❌ 未设置"}`,
 );
 console.log(
 	`  ALIYUN_DM_ACCOUNT_NAME: ${env.ALIYUN_DM_ACCOUNT_NAME ?? "❌ 未设置"}`,
@@ -78,9 +78,12 @@ async function calculateHmacSha1(
 
 // 发送邮件
 async function sendEmail() {
-	const accessKeyId = env.ALIYUN_ACCESS_KEY_ID!;
-	const accessKeySecret = env.ALIYUN_ACCESS_KEY_SECRET!;
-	const accountName = env.ALIYUN_DM_ACCOUNT_NAME!;
+	const accessKeyId = env.ALIYUN_ACCESS_KEY_ID;
+	const accessKeySecret = env.ALIYUN_ACCESS_KEY_SECRET;
+	const accountName = env.ALIYUN_DM_ACCOUNT_NAME;
+	if (!accessKeyId || !accessKeySecret || !accountName) {
+		throw new Error("Missing required Aliyun env variables");
+	}
 	const fromAlias = env.ALIYUN_DM_FROM_ALIAS;
 	const region = env.ALIYUN_REGION || "cn-hangzhou";
 
@@ -118,19 +121,26 @@ async function sendEmail() {
 
 	console.log("📋 请求参数 (已排序):");
 	for (const key of sortedKeys) {
-		const value = params[key]!;
+		const value = params[key];
+		if (value === undefined) {
+			throw new Error(`Missing request param for key: ${key}`);
+		}
 		let displayValue = value;
-		if (key === "AccessKeyId") displayValue = value.slice(0, 8) + "...";
-		if (key === "HtmlBody") displayValue = value.slice(0, 50) + "...";
+		if (key === "AccessKeyId") displayValue = `${value.slice(0, 8)}...`;
+		if (key === "HtmlBody") displayValue = `${value.slice(0, 50)}...`;
 		console.log(`  ${key}: ${displayValue}`);
 	}
 	console.log("");
 
 	// 构建规范查询字符串
 	const canonicalQueryString = sortedKeys
-		.map(
-			(key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key]!)}`,
-		)
+		.map((key) => {
+			const value = params[key];
+			if (value === undefined) {
+				throw new Error(`Missing request param for key: ${key}`);
+			}
+			return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+		})
 		.join("&");
 
 	// 构建待签名字符串

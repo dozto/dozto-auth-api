@@ -129,7 +129,7 @@ SUPABASE_WEBHOOK_SECRET=xxx
 
 ### Confirmation URL Format
 ```
-https://{AUTH_SERVICE_DOMAIN}/verify?token={token_hash}&type=signup&redirect_to={redirect_to}
+https://{AUTH_SERVICE_DOMAIN}/auth/verifications/email-token?token={token_hash}&type=signup&redirect_to={redirect_to}
 ```
 
 ### Out of Scope (Current Version)

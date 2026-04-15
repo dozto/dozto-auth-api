@@ -1,4 +1,4 @@
-import "../../test/test-env.ts";
+import "../../../test/test-env.ts";
 import { describe, expect, mock, test } from "bun:test";
 
 import {
@@ -6,10 +6,11 @@ import {
 	passwordSignUp,
 	phonePasswordSignIn,
 	phonePasswordSignUp,
+	verifyEmailToken,
 	verifyPhoneOtp,
-} from "./repository.ts";
+} from "./supabase.auth.ts";
 
-describe("auth repository – email password", () => {
+describe("auth provider – email password", () => {
 	test("passwordSignUp delegates to supabase.auth.signUp", async () => {
 		const signUp = mock(() =>
 			Promise.resolve({
@@ -72,7 +73,7 @@ describe("auth repository – email password", () => {
 	});
 });
 
-describe("auth repository – phone password", () => {
+describe("auth provider – phone password", () => {
 	test("phonePasswordSignUp delegates to supabase.auth.signUp with phone", async () => {
 		const signUp = mock(() =>
 			Promise.resolve({
@@ -135,7 +136,28 @@ describe("auth repository – phone password", () => {
 	});
 });
 
-describe("auth repository – phone OTP verification", () => {
+describe("auth provider – email verification (token_hash)", () => {
+	test("verifyEmailToken delegates to supabase.auth.verifyOtp with token_hash and type email", async () => {
+		const verifyOtp = mock(() =>
+			Promise.resolve({
+				data: { user: { id: "u1", email: "a@b.co" }, session: null },
+				error: null,
+			}),
+		);
+		const db = {
+			auth: { verifyOtp },
+		} as never;
+
+		await verifyEmailToken({ token: "hash-from-query", type: "signup" }, db);
+
+		expect(verifyOtp).toHaveBeenCalledWith({
+			token_hash: "hash-from-query",
+			type: "email",
+		});
+	});
+});
+
+describe("auth provider – phone OTP verification", () => {
 	test("verifyPhoneOtp delegates to supabase.auth.verifyOtp", async () => {
 		const verifyOtp = mock(() =>
 			Promise.resolve({

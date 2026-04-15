@@ -1,17 +1,17 @@
 import type { AuthError, SupabaseClient } from "@supabase/supabase-js";
 
-import { getSupabase } from "../infra/supabase/client.ts";
-import { mapAuthError } from "./helper.ts";
+import { mapAuthError } from "../../auth/auth.helper.ts";
 import type {
 	EmailPasswordCredentials,
+	EmailVerificationInput,
 	PhoneOtpVerificationInput,
 	PhonePasswordCredentials,
-} from "./schemas.ts";
+} from "../../auth/auth.schemas.ts";
+import { getSupabase } from "./supabase.client.ts";
 
 /**
- * 封装 Supabase Auth 调用的统一错误处理；第二个参数仅用于单测注入 mock。
- * 约束使用完整响应类型 R（如 `AuthResponse`、`AuthTokenResponsePassword`），因
- * `RequestResultSafeDestructure` 在失败分支中 `data` 内字段可为 `null`，不能简写为单一 T。
+ * Encapsulate Supabase Auth calls with shared error handling.
+ * The second parameter exists only for unit-test mock injection.
  */
 const execAuth = async <R extends { data: unknown; error: AuthError | null }>(
 	run: (db: SupabaseClient) => Promise<R>,
@@ -24,7 +24,7 @@ const execAuth = async <R extends { data: unknown; error: AuthError | null }>(
 	return data;
 };
 
-/** 第二个参数仅用于单测注入 mock；生产路径使用默认 `getSupabase()` 单例。 */
+/** The second parameter exists only for unit-test mock injection. */
 export const passwordSignUp = async (
 	input: EmailPasswordCredentials,
 	db: SupabaseClient = getSupabase(),
@@ -38,7 +38,7 @@ export const passwordSignUp = async (
 		db,
 	);
 
-/** 第二个参数仅用于单测注入 mock；生产路径使用默认 `getSupabase()` 单例。 */
+/** The second parameter exists only for unit-test mock injection. */
 export const passwordSignIn = async (
 	input: EmailPasswordCredentials,
 	db: SupabaseClient = getSupabase(),
@@ -52,7 +52,7 @@ export const passwordSignIn = async (
 		db,
 	);
 
-/** 第二个参数仅用于单测注入 mock；生产路径使用默认 `getSupabase()` 单例。 */
+/** The second parameter exists only for unit-test mock injection. */
 export const phonePasswordSignUp = async (
 	input: PhonePasswordCredentials,
 	db: SupabaseClient = getSupabase(),
@@ -66,7 +66,7 @@ export const phonePasswordSignUp = async (
 		db,
 	);
 
-/** 第二个参数仅用于单测注入 mock；生产路径使用默认 `getSupabase()` 单例。 */
+/** The second parameter exists only for unit-test mock injection. */
 export const phonePasswordSignIn = async (
 	input: PhonePasswordCredentials,
 	db: SupabaseClient = getSupabase(),
@@ -80,7 +80,7 @@ export const phonePasswordSignIn = async (
 		db,
 	);
 
-/** 手机号短信 OTP 校验（注册确认、换绑手机等场景）。 */
+/** Phone OTP verification (signup confirmation / phone change). */
 export const verifyPhoneOtp = async (
 	input: PhoneOtpVerificationInput,
 	db: SupabaseClient = getSupabase(),
@@ -91,6 +91,20 @@ export const verifyPhoneOtp = async (
 				phone: input.phone,
 				token: input.token,
 				type: input.type,
+			}),
+		db,
+	);
+
+/** Email token_hash verification (email confirmation link). */
+export const verifyEmailToken = async (
+	input: EmailVerificationInput,
+	db: SupabaseClient = getSupabase(),
+) =>
+	execAuth(
+		(client) =>
+			client.auth.verifyOtp({
+				token_hash: input.token,
+				type: "email",
 			}),
 		db,
 	);

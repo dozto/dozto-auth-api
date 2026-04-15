@@ -6,14 +6,18 @@ import { loadEnv } from "../lib/env/index.ts";
 import { isAppError } from "../lib/errors/index.ts";
 import {
 	assertPasswordEnabled,
+	assertSupportedVerificationType,
+	isValidRedirectUrl,
 	mapAuthError,
 	mapSessionResponse,
-} from "./helper.ts";
+} from "./auth.helper.ts";
 
 const savedPasswordEnabled = process.env.AUTH_PASSWORD_ENABLED;
+const savedAuthDomain = process.env.AUTH_SERVICE_DOMAIN;
 
 afterEach(() => {
 	process.env.AUTH_PASSWORD_ENABLED = savedPasswordEnabled;
+	process.env.AUTH_SERVICE_DOMAIN = savedAuthDomain;
 	loadEnv();
 });
 
@@ -69,6 +73,39 @@ describe("mapAuthError", () => {
 				expect(thrown.payload.statusCode).toBe(401);
 			}
 		}
+	});
+});
+
+describe("assertSupportedVerificationType", () => {
+	test("allows signup", () => {
+		expect(() => assertSupportedVerificationType("signup")).not.toThrow();
+	});
+
+	test("throws UNSUPPORTED_TYPE for other types", () => {
+		try {
+			assertSupportedVerificationType("recovery");
+			expect.unreachable("should have thrown");
+		} catch (err) {
+			expect(isAppError(err)).toBe(true);
+			if (isAppError(err)) {
+				expect(err.payload.code).toBe("UNSUPPORTED_TYPE");
+				expect(err.payload.statusCode).toBe(400);
+			}
+		}
+	});
+});
+
+describe("isValidRedirectUrl", () => {
+	test("returns true when origin matches AUTH_SERVICE_DOMAIN", () => {
+		process.env.AUTH_SERVICE_DOMAIN = "https://app.example.com";
+		loadEnv();
+		expect(isValidRedirectUrl("https://app.example.com/callback")).toBe(true);
+	});
+
+	test("returns false when domain not allowed", () => {
+		process.env.AUTH_SERVICE_DOMAIN = "https://app.example.com";
+		loadEnv();
+		expect(isValidRedirectUrl("https://evil.com/phish")).toBe(false);
 	});
 });
 

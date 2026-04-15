@@ -2,9 +2,10 @@ import "../test-env.ts";
 import { describe, expect, test } from "bun:test";
 
 import { app } from "../../src/hono.ts";
+import { loadEnv } from "../../src/lib/env/index.ts";
 
 describe("POST /webhooks/email/send", () => {
-	test("returns 401 without signature header", async () => {
+	test("returns 503 when webhook secret is not configured (test env)", async () => {
 		const response = await app.request("http://localhost/webhooks/email/send", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -19,10 +20,19 @@ describe("POST /webhooks/email/send", () => {
 				},
 			}),
 		});
-		expect(response.status).toBe(401);
+		expect(response.status).toBe(503);
+		const body = (await response.json()) as { error: { code: string } };
+		expect(body.error.code).toBe("WEBHOOK_SECRET_MISSING");
 	});
 
-	test("returns 401 with invalid signature", async () => {
+	test("returns 401 when secret is set but signature is invalid", async () => {
+		const saved = process.env.SUPABASE_WEBHOOK_SECRET;
+		const keyBytes = new Uint8Array(32);
+		crypto.getRandomValues(keyBytes);
+		const whsec = `whsec_${Buffer.from(keyBytes).toString("base64")}`;
+		process.env.SUPABASE_WEBHOOK_SECRET = `v1,${whsec}`;
+		loadEnv();
+
 		const response = await app.request("http://localhost/webhooks/email/send", {
 			method: "POST",
 			headers: {
@@ -41,27 +51,36 @@ describe("POST /webhooks/email/send", () => {
 			}),
 		});
 		expect(response.status).toBe(401);
+		const body = (await response.json()) as { error: { code: string } };
+		expect(body.error.code).toBe("WEBHOOK_INVALID_SIGNATURE");
+
+		process.env.SUPABASE_WEBHOOK_SECRET = saved;
+		loadEnv();
 	});
 });
 
-describe("GET /verify", () => {
-	test("returns 400 without token", async () => {
-		const response = await app.request("http://localhost/verify?type=signup");
-		expect(response.status).toBe(400);
-		const body = (await response.json()) as { error: { code: string } };
-		expect(body.error.code).toBe("MISSING_PARAMETERS");
-	});
-
-	test("returns 400 without type", async () => {
-		const response = await app.request("http://localhost/verify?token=abc123");
-		expect(response.status).toBe(400);
-		const body = (await response.json()) as { error: { code: string } };
-		expect(body.error.code).toBe("MISSING_PARAMETERS");
-	});
-
-	test("returns 400 for unsupported type", async () => {
+describe("GET /auth/verifications/email-token", () => {
+	test("returns 400 when token is missing (Zod)", async () => {
 		const response = await app.request(
-			"http://localhost/verify?token=abc123&type=recovery",
+			"http://localhost/auth/verifications/email-token?type=signup",
+		);
+		expect(response.status).toBe(400);
+		const body = (await response.json()) as { success: boolean };
+		expect(body.success).toBe(false);
+	});
+
+	test("returns 400 when type is missing (Zod)", async () => {
+		const response = await app.request(
+			"http://localhost/auth/verifications/email-token?token=abc123",
+		);
+		expect(response.status).toBe(400);
+		const body = (await response.json()) as { success: boolean };
+		expect(body.success).toBe(false);
+	});
+
+	test("returns 400 when type is not supported", async () => {
+		const response = await app.request(
+			"http://localhost/auth/verifications/email-token?token=abc123&type=recovery",
 		);
 		expect(response.status).toBe(400);
 		const body = (await response.json()) as { error: { code: string } };

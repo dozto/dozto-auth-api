@@ -26,7 +26,7 @@ const boot = async (): Promise<void> => {
 		log.info("[BOOT] Initialize logger completed.");
 
 		const { verifySupabaseConnection } = await import(
-			"./infra/supabase/verify.ts"
+			"./providers/supabase/supabase.client.ts"
 		);
 		await verifySupabaseConnection();
 		log.info("[BOOT] Verify Supabase connection completed.");

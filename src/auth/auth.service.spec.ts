@@ -3,11 +3,11 @@ import { afterEach, describe, expect, test } from "bun:test";
 
 import { loadEnv } from "../lib/env/index.ts";
 import { isAppError } from "../lib/errors/index.ts";
-import { assertPasswordEnabled, mapSessionResponse } from "./helper.ts";
+import { assertPasswordEnabled, mapSessionResponse } from "./auth.helper.ts";
 import type {
 	EmailPasswordCredentials,
 	PhonePasswordCredentials,
-} from "./schemas.ts";
+} from "./auth.schemas.ts";
 
 const savedPasswordEnabled = process.env.AUTH_PASSWORD_ENABLED;
 
@@ -40,7 +40,7 @@ describe("auth service – assertPasswordEnabled guard", () => {
 });
 
 describe("auth service – mapSessionResponse delegation", () => {
-	test("maps repo data to client shape", () => {
+	test("maps provider data to client shape", () => {
 		const input = {
 			session: {
 				access_token: "at",
@@ -64,11 +64,13 @@ describe("auth service – passwordSignUp flow", () => {
 		password: "password1",
 	};
 
-	test("passwordSignUp: guard + repo + mapper", async () => {
+	test("passwordSignUp: guard + provider + mapper", async () => {
 		process.env.AUTH_PASSWORD_ENABLED = "true";
 		loadEnv();
 
-		const { passwordSignUp: repoSignUp } = await import("./repository.ts");
+		const { passwordSignUp: providerSignUp } = await import(
+			"../providers/supabase/index.ts"
+		);
 
 		const fakeDb = {
 			auth: {
@@ -89,10 +91,10 @@ describe("auth service – passwordSignUp flow", () => {
 			},
 		} as never;
 
-		const repoData = await repoSignUp(fakeInput, fakeDb);
+		const providerData = await providerSignUp(fakeInput, fakeDb);
 		const result = mapSessionResponse({
-			session: repoData.session,
-			user: repoData.user,
+			session: providerData.session,
+			user: providerData.user,
 		});
 		expect(result.session?.accessToken).toBe("at");
 		expect(result.user?.id).toBe("u1");
@@ -102,7 +104,7 @@ describe("auth service – passwordSignUp flow", () => {
 		process.env.AUTH_PASSWORD_ENABLED = "false";
 		loadEnv();
 
-		const { passwordSignUp: serviceSignUp } = await import("./service.ts");
+		const { passwordSignUp: serviceSignUp } = await import("./auth.service.ts");
 
 		try {
 			await serviceSignUp(fakeInput);
@@ -127,7 +129,9 @@ describe("auth service – passwordSignIn flow", () => {
 		process.env.AUTH_PASSWORD_ENABLED = "false";
 		loadEnv();
 
-		const { passwordSignIn: repoSignIn } = await import("./repository.ts");
+		const { passwordSignIn: providerSignIn } = await import(
+			"../providers/supabase/index.ts"
+		);
 
 		// Create a mock that succeeds
 		const fakeDb = {
@@ -149,9 +153,9 @@ describe("auth service – passwordSignIn flow", () => {
 			},
 		} as never;
 
-		// Verify repo layer works
-		const repoData = await repoSignIn(fakeInput, fakeDb);
-		expect(repoData.user?.id).toBe("u1");
+		// Verify provider layer works
+		const providerData = await providerSignIn(fakeInput, fakeDb);
+		expect(providerData.user?.id).toBe("u1");
 	});
 });
 
@@ -161,11 +165,13 @@ describe("auth service – phonePasswordSignUp flow", () => {
 		password: "password1",
 	};
 
-	test("phonePasswordSignUp: guard + repo + mapper", async () => {
+	test("phonePasswordSignUp: guard + provider + mapper", async () => {
 		process.env.AUTH_PASSWORD_ENABLED = "true";
 		loadEnv();
 
-		const { phonePasswordSignUp: repoSignUp } = await import("./repository.ts");
+		const { phonePasswordSignUp: providerSignUp } = await import(
+			"../providers/supabase/index.ts"
+		);
 
 		const fakeDb = {
 			auth: {
@@ -186,10 +192,10 @@ describe("auth service – phonePasswordSignUp flow", () => {
 			},
 		} as never;
 
-		const repoData = await repoSignUp(fakeInput, fakeDb);
+		const providerData = await providerSignUp(fakeInput, fakeDb);
 		const result = mapSessionResponse({
-			session: repoData.session,
-			user: repoData.user,
+			session: providerData.session,
+			user: providerData.user,
 		});
 		expect(result.session?.accessToken).toBe("at");
 		expect(result.user?.id).toBe("u2");
@@ -199,7 +205,9 @@ describe("auth service – phonePasswordSignUp flow", () => {
 		process.env.AUTH_PASSWORD_ENABLED = "false";
 		loadEnv();
 
-		const { phonePasswordSignUp: serviceSignUp } = await import("./service.ts");
+		const { phonePasswordSignUp: serviceSignUp } = await import(
+			"./auth.service.ts"
+		);
 
 		try {
 			await serviceSignUp(fakeInput);
@@ -224,7 +232,9 @@ describe("auth service – phonePasswordSignIn flow", () => {
 		process.env.AUTH_PASSWORD_ENABLED = "false";
 		loadEnv();
 
-		const { phonePasswordSignIn: repoSignIn } = await import("./repository.ts");
+		const { phonePasswordSignIn: providerSignIn } = await import(
+			"../providers/supabase/index.ts"
+		);
 
 		// Create a mock that succeeds
 		const fakeDb = {
@@ -246,8 +256,8 @@ describe("auth service – phonePasswordSignIn flow", () => {
 			},
 		} as never;
 
-		// Verify repo layer works
-		const repoData = await repoSignIn(fakeInput, fakeDb);
-		expect(repoData.user?.id).toBe("u2");
+		// Verify provider layer works
+		const providerData = await providerSignIn(fakeInput, fakeDb);
+		expect(providerData.user?.id).toBe("u2");
 	});
 });

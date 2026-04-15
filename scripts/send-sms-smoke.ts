@@ -9,17 +9,14 @@
 import { Webhook } from "standardwebhooks";
 
 import { app } from "../src/hono.ts";
-import { loadEnv } from "../src/lib/env/index.ts";
+import { env, loadEnv } from "../src/lib/env/index.ts";
 import { initLogger } from "../src/lib/logger/index.ts";
-import { normalizeWebhookSecret } from "../src/providers/sms/webhook-verify.ts";
+import { normalizeWebhookSecret } from "../src/lib/webhook/verify.ts";
 
 const phone = process.argv[2] ?? "+8618302123021";
 
 loadEnv();
 initLogger();
-
-const { getEnv } = await import("../src/lib/env/index.ts");
-const env = getEnv();
 
 if (!env.SMS_ENABLED) {
 	console.error("SMS_ENABLED 未为 true，请在 .env 中启用后再试。");

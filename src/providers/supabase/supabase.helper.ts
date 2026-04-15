@@ -1,16 +1,16 @@
 /**
- * Supabase Auth Hooks 使用 Standard Webhooks 规范（非 Stripe 的 `t=,v1=` 格式）。
+ * Standard Webhooks signature verification for Supabase Auth Hooks.
  * @see https://supabase.com/docs/guides/auth/auth-hooks#hook-security
  * @see https://github.com/standard-webhooks/standard-webhooks
  */
 
 import { Webhook, WebhookVerificationError } from "standardwebhooks";
 
-import { getEnv } from "../../lib/env/index.ts";
+import { env } from "../../lib/env/index.ts";
 import { createAppError } from "../../lib/errors/index.ts";
-import { getLogger } from "../../lib/logger/index.ts";
+import { logger } from "../../lib/logger/index.ts";
 
-/** Dashboard 中 secret 常为 `v1,whsec_<base64>`；`Webhook` 构造函数只识别 `whsec_` 前缀。 */
+/** Supabase secret may be `v1,whsec_<base64>`; Webhook only accepts `whsec_` prefixed key. */
 export const normalizeWebhookSecret = (secret: string): string => {
 	const s = secret.trim();
 	if (s.startsWith("v1,")) {
@@ -19,9 +19,7 @@ export const normalizeWebhookSecret = (secret: string): string => {
 	return s;
 };
 
-/**
- * 将请求头转为 `standardwebhooks` 所需的 `Record`（键名大小写不敏感）。
- */
+/** Convert Headers into the Record shape expected by `standardwebhooks`. */
 const headersToRecord = (headers: Headers): Record<string, string> => {
 	const out: Record<string, string> = {};
 	headers.forEach((value, key) => {
@@ -30,15 +28,11 @@ const headersToRecord = (headers: Headers): Record<string, string> => {
 	return out;
 };
 
-/**
- * 校验 Standard Webhooks 签名并返回解析后的 JSON 对象。
- */
+/** Verify Standard Webhooks signature and return parsed payload object. */
 export const verifyStandardWebhookPayload = (
 	rawBody: string,
 	headers: Headers,
 ): unknown => {
-	const env = getEnv();
-	const logger = getLogger();
 	const secret = env.SUPABASE_WEBHOOK_SECRET?.trim();
 
 	if (!secret) {

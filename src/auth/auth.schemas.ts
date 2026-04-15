@@ -27,19 +27,11 @@ export const passwordCredentialBodySchema = z.union([
 	phonePasswordSchema.strict(),
 ]);
 
-/**
- * 邮箱 + 密码注册 / 登录（向后兼容）。
- * @deprecated 使用 emailPasswordSchema 替代。
- */
-export const passwordCredentialsSchema = emailPasswordSchema;
-
 export type EmailPasswordCredentials = z.infer<typeof emailPasswordSchema>;
 export type PhonePasswordCredentials = z.infer<typeof phonePasswordSchema>;
 export type PasswordCredentialBody = z.infer<
 	typeof passwordCredentialBodySchema
 >;
-/** @deprecated 使用 EmailPasswordCredentials 替代。 */
-export type PasswordCredentials = EmailPasswordCredentials;
 
 /** `POST /auth/verifications/phone-otp`：提交短信验证码（对应 Supabase `verifyOtp`）。 */
 export const phoneOtpVerificationSchema = z.object({
@@ -51,3 +43,12 @@ export const phoneOtpVerificationSchema = z.object({
 export type PhoneOtpVerificationInput = z.infer<
 	typeof phoneOtpVerificationSchema
 >;
+
+/** `GET /auth/verifications/email-token?token=…&type=…`：邮箱确认链接参数。 */
+export const emailVerificationSchema = z.object({
+	token: z.string().min(1),
+	type: z.string().min(1),
+	redirect_to: z.string().optional(),
+});
+
+export type EmailVerificationInput = z.infer<typeof emailVerificationSchema>;

@@ -1,14 +1,21 @@
 import "../../../test/test-env.ts";
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 import { Webhook } from "standardwebhooks";
 
 import { loadEnv } from "../../lib/env/index.ts";
 import {
 	normalizeWebhookSecret,
 	verifyStandardWebhookPayload,
-} from "./webhook-verify.ts";
+} from "./supabase.helper.ts";
 
-describe("sms provider - webhook verification", () => {
+const savedWebhookSecret = process.env.SUPABASE_WEBHOOK_SECRET;
+
+afterEach(() => {
+	process.env.SUPABASE_WEBHOOK_SECRET = savedWebhookSecret;
+	loadEnv();
+});
+
+describe("supabase helper — Standard Webhooks verification", () => {
 	test("normalizeWebhookSecret strips v1, prefix", () => {
 		expect(normalizeWebhookSecret("v1,whsec_abc")).toBe("whsec_abc");
 		expect(normalizeWebhookSecret("whsec_xyz")).toBe("whsec_xyz");

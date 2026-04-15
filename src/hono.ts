@@ -1,15 +1,16 @@
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
-import { authRouterBoundary, createAuthRouter } from "./auth/routes.ts";
-import { getEnv } from "./lib/env/index.ts";
+import { authRouterBoundary, createAuthRouter } from "./auth/auth.routes.ts";
+import { env } from "./lib/env/index.ts";
 import { isAppError } from "./lib/errors/index.ts";
 import { buildHealthResponse } from "./lib/health/index.ts";
 import { getLogger } from "./lib/logger/index.ts";
-import { handleSendEmailHook } from "./providers/email/index.ts";
-import { createSmsRouter, smsRouterBoundary } from "./providers/sms/index.ts";
-import { handleEmailVerification } from "./routes/verify.ts";
 import { createSseRouter, sseRouterBoundary } from "./sse/routes.ts";
+import {
+	createWebhookRouter,
+	webhookRouterBoundary,
+} from "./webhook/webhook.routes.ts";
 
 /**
  * 最外层 Hono 应用：挂载各业务子路由与全局端点。
@@ -35,14 +36,10 @@ app.onError((err, context) => {
 
 app.route(authRouterBoundary.mountPath, createAuthRouter());
 app.route(sseRouterBoundary.mountPath, createSseRouter());
-app.route(smsRouterBoundary.mountPath, createSmsRouter());
-
-// Email webhook routes
-app.post("/webhooks/email/send", handleSendEmailHook);
-app.get("/verify", handleEmailVerification);
+app.route(webhookRouterBoundary.mountPath, createWebhookRouter());
 
 app.get("/health", (context) =>
-	context.json(buildHealthResponse(getEnv().SERVICE_NAME)),
+	context.json(buildHealthResponse(env.SERVICE_NAME)),
 );
 
 export default app;

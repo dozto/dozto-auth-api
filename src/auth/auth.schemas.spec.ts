@@ -2,13 +2,13 @@ import { describe, expect, it } from "bun:test";
 
 import {
 	emailPasswordSchema,
+	emailVerificationSchema,
 	passwordCredentialBodySchema,
-	passwordCredentialsSchema,
 	passwordRule,
 	phoneOtpVerificationSchema,
 	phonePasswordSchema,
 	phoneRule,
-} from "./schemas.ts";
+} from "./auth.schemas.ts";
 
 describe("phoneRule", () => {
 	it("accepts phone length 5–20", () => {
@@ -222,22 +222,33 @@ describe("passwordCredentialBodySchema", () => {
 	});
 });
 
-describe("passwordCredentialsSchema (backward compatibility)", () => {
-	it("works the same as emailPasswordSchema", () => {
-		const result = passwordCredentialsSchema.parse({
-			email: "user@example.com",
-			password: "securePassword123",
+describe("emailVerificationSchema", () => {
+	it("accepts token, type, and optional redirect_to", () => {
+		const result = emailVerificationSchema.parse({
+			token: "abc123",
+			type: "signup",
+			redirect_to: "https://app.example.com/callback",
 		});
-		expect(result.email).toBe("user@example.com");
-		expect(result.password).toBe("securePassword123");
+		expect(result.token).toBe("abc123");
+		expect(result.type).toBe("signup");
+		expect(result.redirect_to).toBe("https://app.example.com/callback");
 	});
 
-	it("rejects invalid input", () => {
+	it("accepts token and type without redirect_to", () => {
+		const result = emailVerificationSchema.parse({
+			token: "hash",
+			type: "signup",
+		});
+		expect(result.redirect_to).toBeUndefined();
+	});
+
+	it("rejects empty token", () => {
 		expect(() =>
-			passwordCredentialsSchema.parse({
-				email: "not-an-email",
-				password: "short",
-			}),
+			emailVerificationSchema.parse({ token: "", type: "signup" }),
 		).toThrow();
+	});
+
+	it("rejects missing type", () => {
+		expect(() => emailVerificationSchema.parse({ token: "abc" })).toThrow();
 	});
 });
