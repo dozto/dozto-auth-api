@@ -11,7 +11,7 @@ import { Webhook } from "standardwebhooks";
 import { app } from "../src/hono.ts";
 import { env, loadEnv } from "../src/lib/env/index.ts";
 import { initLogger } from "../src/lib/logger/index.ts";
-import { normalizeWebhookSecret } from "../src/lib/webhook/verify.ts";
+import { normalizeWebhookSecret } from "../src/providers/supabase/supabase.helper.ts";
 
 const phone = process.argv[2] ?? "+8618302123021";
 

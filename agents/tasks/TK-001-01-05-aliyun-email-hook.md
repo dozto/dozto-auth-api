@@ -6,7 +6,7 @@
 - Story ID: `ST-001-01`
 - Epic ID: `EP-001`
 - Title: Supabase Send Email Hook with Alibaba Cloud DirectMail
-- Status: `in_progress`
+- Status: `done`
 - Owner:
 - Created: 2026-04-05
 - Updated: 2026-04-05
